@@ -118,12 +118,7 @@ public class MainMgschst extends Game {
         }
     }
 
-    @Override
-    public void dispose() {
-        batch.dispose();
-        mainFont.dispose();
-        menuMusic.dispose();
-    }
+    @Override public void dispose() { }
 
     public TextButton.TextButtonStyle getTextButtonStyle() {
         return textButtonStyle;

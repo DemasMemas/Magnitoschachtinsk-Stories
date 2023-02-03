@@ -130,10 +130,8 @@ public class AuthorizationScreen implements Screen {
             @Override public void changed(ChangeEvent event, Actor actor) {
                 if (game.isButtonPressed()) {
                     game.setButtonPressed(true);
-                    dispose();
-                    game.batch.dispose();
-                    game.mainFont.dispose();
-                    game.dispose(); } }});
+                    game.dispose();
+                Gdx.app.exit();} }});
     }
 
     @Override
