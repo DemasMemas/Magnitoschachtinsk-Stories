@@ -14,8 +14,11 @@ public class GameScreen implements Screen {
 
 
 
-    public GameScreen(final MainMgschst game) {
+    TCPConnection currentPlayerConnection;
+
+    public GameScreen(final MainMgschst game, TCPConnection playerConnection) {
         this.game = game;
+        this.currentPlayerConnection = playerConnection;
 
         camera = new OrthographicCamera();
         camera.setToOrtho(false);

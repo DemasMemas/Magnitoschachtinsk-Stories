@@ -18,8 +18,10 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 
-public class MainMenuScreen implements Screen, TCPConnectionListener  {
+public class MainMenuScreen implements Screen, TCPConnectionListener {
     final MainMgschst game;
     OrthographicCamera camera;
     Texture background;
@@ -84,12 +86,11 @@ public class MainMenuScreen implements Screen, TCPConnectionListener  {
                         @Override
                         public void clicked(InputEvent event, float x, float y) {
                                 dialog.hide();
-                                game.setScreen(new GameScreen(game));
-                                dispose();
-
                                 try {
                                     connection = new TCPConnection(MainMenuScreen.this, "localhost", 8080);
                                     connection.sendString("createGame," + game.getCurrentUserName() + "," + tempTextField.getText().trim());
+                                    game.setScreen(new GameScreen(game, connection));
+                                    dispose();
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 } }});
@@ -113,9 +114,7 @@ public class MainMenuScreen implements Screen, TCPConnectionListener  {
             @Override public void changed(ChangeEvent event, Actor actor) {
                 if (game.isButtonPressed()) {
                     game.setButtonPressed(true);
-
-                    // новое окно с выбором доступной игры
-
+                    game.setScreen(new GameMatchingScreen(game));
                 }}});
 
         openProfileButton.addListener(new ChangeListener() {
@@ -166,6 +165,13 @@ public class MainMenuScreen implements Screen, TCPConnectionListener  {
     @Override
     public void onReceiveString(TCPConnection tcpConnection, String value) {
         // обработка обратной связи, взаимодействие с объектом GameScreen
+        ArrayList<String> commandList = new ArrayList<>();
+        Collections.addAll(commandList, value.split(","));
+        Gdx.app.postRunnable(() -> {
+            switch (commandList.get(0)) {
+                case "writeChatMsg" -> System.out.println(commandList.get(1) + ": " + commandList.get(2));
+            }
+        });
     }
 
     @Override

@@ -1,7 +1,10 @@
 package mgschst.com;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Net;
+import com.badlogic.gdx.net.Socket;
+
 import java.io.*;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 public class TCPConnection {
@@ -12,10 +15,10 @@ public class TCPConnection {
     private final BufferedWriter out;
 
     public TCPConnection(TCPConnectionListener eventListener, String ipAddress, int port) throws IOException {
-        this(eventListener, new Socket(ipAddress, port));
+        this(eventListener, Gdx.net.newClientSocket(Net.Protocol.TCP, ipAddress, port, null));
     }
 
-    public TCPConnection(TCPConnectionListener eventListener, Socket socket) throws IOException {
+    public TCPConnection(TCPConnectionListener eventListener, Socket socket) {
         this.eventListener = eventListener;
         this.socket = socket;
         in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
@@ -50,15 +53,11 @@ public class TCPConnection {
 
     private synchronized void disconnect() {
         thread.interrupt();
-        try {
-            socket.close();
-        } catch (IOException e) {
-            eventListener.onException(this, e);
-        }
+        socket.dispose();
     }
 
     @Override
     public String toString() {
-        return "TCPConnection: " + socket.getInetAddress() + ": " + socket.getPort();
+        return "TCPConnection: " + socket.getRemoteAddress();
     }
 }
