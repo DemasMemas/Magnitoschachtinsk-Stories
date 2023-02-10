@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import java.sql.Connection;
@@ -53,14 +54,17 @@ public class AuthorizationScreen implements Screen {
         loginButton = new TextButton("Войти", game.getTextButtonStyle());
         stage.addActor(loginButton);
         loginButton.setPosition(960 - 68, 1080 - 700);
+        loginButton.align(Align.center);
 
         registerButton = new TextButton("Зарегистрироваться", game.getTextButtonStyle());
         stage.addActor(registerButton);
         registerButton.setPosition(960 - 236, 1080 - 750);
+        registerButton.align(Align.center);
 
         exitGameButton = new TextButton("Выйти", game.getTextButtonStyle());
         stage.addActor(exitGameButton);
         exitGameButton.setPosition(960 - 68, 1080 - 850);
+        exitGameButton.align(Align.center);
 
         loginField = new TextField("", game.getTextFieldStyle());
         stage.addActor(loginField);
@@ -68,6 +72,7 @@ public class AuthorizationScreen implements Screen {
         loginField.setWidth(400f);
         loginField.setMessageText("Введите логин...");
         loginField.setMaxLength(16);
+        loginField.setAlignment(Align.center);
 
         passwordField = new TextField("", game.getTextFieldStyle());
         stage.addActor(passwordField);
@@ -77,6 +82,7 @@ public class AuthorizationScreen implements Screen {
         passwordField.setWidth(400f);
         passwordField.setMessageText("Введите пароль..");
         passwordField.setMaxLength(20);
+        passwordField.setAlignment(Align.center);
 
         loginButton.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent event, Actor actor) {
@@ -141,11 +147,10 @@ public class AuthorizationScreen implements Screen {
 
         Label mainLabel = new Label("Магнитошахтинск ждёт", game.getMainLabelStyle());
         mainLabel.setPosition(960 - 255, 1080 - 400);
+        mainLabel.setAlignment(Align.center);
         stage.addActor(mainLabel);
 
         for (Actor actor:stage.getActors()) {
-            actor.setWidth(actor.getWidth() * game.xScaler);
-            actor.setHeight(actor.getHeight() * game.yScaler);
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
             actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
         }
