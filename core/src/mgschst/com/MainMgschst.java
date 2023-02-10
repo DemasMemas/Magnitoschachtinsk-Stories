@@ -37,6 +37,9 @@ public class MainMgschst extends Game {
     private TCPConnection playerConnection;
     private int currentGameID;
 
+    public float xScaler = 1;
+    public float yScaler = 1;
+
     @Override
     public void create() {
         recreatePlayerConnection();
@@ -184,7 +187,7 @@ public class MainMgschst extends Game {
     public void setCurrentGameID(int currentGameID) { this.currentGameID = currentGameID; }
 
     public void recreatePlayerConnection(){ try {
-        playerConnection = new TCPConnection(new TCPConnectionHandler(this), "localhost", 8080);
+        playerConnection = new TCPConnection(new TCPConnectionHandler(this), "192.168.67.241", 8080);
     } catch (Exception e) {
         e.printStackTrace();
     }}

@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -21,7 +22,7 @@ public class AuthorizationScreen implements Screen {
     final MainMgschst game;
     final OrthographicCamera camera;
     final Batch batch;
-    Texture background;
+    Sprite background;
     Stage stage;
 
     TextButton loginButton;
@@ -41,7 +42,8 @@ public class AuthorizationScreen implements Screen {
         camera = game.getCamera();
         batch = game.batch;
 
-        background = new Texture(Gdx.files.internal("AuthorizationAssets/authorization_bg.jpg"));
+        background = new Sprite(new Texture(Gdx.files.internal("AuthorizationAssets/authorization_bg.jpg")));
+        background.setBounds(0, 0, 1920 * game.xScaler, 1080 * game.yScaler);
 
         loginButton = new TextButton("Войти", game.getTextButtonStyle());
         stage.addActor(loginButton);
@@ -145,21 +147,23 @@ public class AuthorizationScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        batch.draw(background, 0, 0);
+        background.draw(game.batch);
         game.mainFont.draw(batch, "Магнитошахтинск ждёт", stage.getWidth()/2 - 255, stage.getHeight() - 400);
         batch.end();
 
         stage.draw();
     }
 
-    @Override public void resize(int width, int height) { }
+    @Override public void resize(int width, int height) {
+        game.xScaler = 1920f/width;
+        game.yScaler = 1080f/height;
+    }
     @Override public void pause() { }
     @Override public void resume() { }
     @Override public void hide() { dispose(); }
 
     @Override
     public void dispose() {
-        background.dispose();
         stage.dispose();
     }
 }

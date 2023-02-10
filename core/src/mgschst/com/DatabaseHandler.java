@@ -8,7 +8,7 @@ public class DatabaseHandler {
     public Connection getConnection() {
 
         Connection conn = null;
-        String url = "jdbc:mysql://localhost/mgscht";
+        String url = "jdbc:mysql://192.168.67.241:3306/mgscht";
         String username = "root";
         String password = "root";
         try {
