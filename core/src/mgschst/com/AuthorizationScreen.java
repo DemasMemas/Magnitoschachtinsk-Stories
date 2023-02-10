@@ -40,8 +40,8 @@ public class AuthorizationScreen implements Screen {
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
 
-        game.xScaler = 1920f/ stage.getWidth();
-        game.yScaler = 1080f/ stage.getHeight();
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
 
         camera = game.getCamera();
         batch = game.batch;
@@ -144,10 +144,10 @@ public class AuthorizationScreen implements Screen {
         stage.addActor(mainLabel);
 
         for (Actor actor:stage.getActors()) {
-            actor.setWidth(actor.getWidth() / game.xScaler);
-            actor.setHeight(actor.getHeight() / game.yScaler);
+            actor.setWidth(actor.getWidth() * game.xScaler);
+            actor.setHeight(actor.getHeight() * game.yScaler);
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
-            actor.setPosition(actor.getX() / game.xScaler, actor.getY() / game.yScaler);
+            actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
         }
     }
 
