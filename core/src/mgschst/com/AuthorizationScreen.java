@@ -146,6 +146,8 @@ public class AuthorizationScreen implements Screen {
 
         System.out.println(game.xScaler + " " + game.yScaler);
         for (Actor actor:stage.getActors()) {
+            actor.setWidth(actor.getWidth() / game.xScaler);
+            actor.setHeight(actor.getHeight() / game.yScaler);
             //actor.scaleBy(game.xScaler,  game.yScaler);
             actor.setPosition(actor.getX() / game.xScaler, actor.getY() / game.yScaler);
         }
