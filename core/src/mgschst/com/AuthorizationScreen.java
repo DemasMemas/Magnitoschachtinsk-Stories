@@ -5,9 +5,10 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -22,7 +23,7 @@ public class AuthorizationScreen implements Screen {
     final MainMgschst game;
     final OrthographicCamera camera;
     final Batch batch;
-    Sprite background;
+    Image background;
     Stage stage;
 
     TextButton loginButton;
@@ -39,27 +40,31 @@ public class AuthorizationScreen implements Screen {
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
 
+        game.xScaler = 1920f/ stage.getWidth();
+        game.yScaler = 1080f/ stage.getHeight();
+
         camera = game.getCamera();
         batch = game.batch;
 
-        background = new Sprite(new Texture(Gdx.files.internal("AuthorizationAssets/authorization_bg.jpg")));
-        background.setBounds(0, 0, 1920 * game.xScaler, 1080 * game.yScaler);
+        background = new Image(new Texture(Gdx.files.internal("AuthorizationAssets/authorization_bg.jpg")));
+        background.setPosition(0,0);
+        stage.addActor(background);
 
         loginButton = new TextButton("Войти", game.getTextButtonStyle());
         stage.addActor(loginButton);
-        loginButton.setPosition(stage.getWidth()/2 - 68, stage.getHeight() - 700);
+        loginButton.setPosition(960 - 68, 1080 - 700);
 
         registerButton = new TextButton("Зарегистрироваться", game.getTextButtonStyle());
         stage.addActor(registerButton);
-        registerButton.setPosition(stage.getWidth()/2 - 236, stage.getHeight() - 750);
+        registerButton.setPosition(960 - 236, 1080 - 750);
 
         exitGameButton = new TextButton("Выйти", game.getTextButtonStyle());
         stage.addActor(exitGameButton);
-        exitGameButton.setPosition(stage.getWidth()/2 - 68, stage.getHeight() - 850);
+        exitGameButton.setPosition(960 - 68, 1080 - 850);
 
         loginField = new TextField("", game.getTextFieldStyle());
         stage.addActor(loginField);
-        loginField.setPosition(stage.getWidth()/2 - 175, stage.getHeight() - 550);
+        loginField.setPosition(960 - 175, 1080 - 550);
         loginField.setWidth(400f);
         loginField.setMessageText("Введите логин...");
         loginField.setMaxLength(16);
@@ -68,7 +73,7 @@ public class AuthorizationScreen implements Screen {
         stage.addActor(passwordField);
         passwordField.setPasswordMode(true);
         passwordField.setPasswordCharacter('*');
-        passwordField.setPosition(stage.getWidth()/2 - 175, stage.getHeight() - 600);
+        passwordField.setPosition(960 - 175, 1080 - 600);
         passwordField.setWidth(400f);
         passwordField.setMessageText("Введите пароль..");
         passwordField.setMaxLength(20);
@@ -133,6 +138,17 @@ public class AuthorizationScreen implements Screen {
                 game.getPlayerConnection().disconnect();
                 game.dispose();
                 Gdx.app.exit(); }});
+
+        Label mainLabel = new Label("Магнитошахтинск ждёт", game.getMainLabelStyle());
+        mainLabel.setPosition(960 - 255, 1080 - 400);
+        stage.addActor(mainLabel);
+
+
+        System.out.println(game.xScaler + " " + game.yScaler);
+        for (Actor actor:stage.getActors()) {
+            //actor.scaleBy(game.xScaler,  game.yScaler);
+            actor.setPosition(actor.getX() / game.xScaler, actor.getY() / game.yScaler);
+        }
     }
 
     @Override
@@ -146,18 +162,10 @@ public class AuthorizationScreen implements Screen {
         camera.update();
         batch.setProjectionMatrix(camera.combined);
 
-        batch.begin();
-        background.draw(game.batch);
-        game.mainFont.draw(batch, "Магнитошахтинск ждёт", stage.getWidth()/2 - 255, stage.getHeight() - 400);
-        batch.end();
-
         stage.draw();
     }
 
-    @Override public void resize(int width, int height) {
-        game.xScaler = 1920f/width;
-        game.yScaler = 1080f/height;
-    }
+    @Override public void resize(int width, int height) {    }
     @Override public void pause() { }
     @Override public void resume() { }
     @Override public void hide() { dispose(); }
