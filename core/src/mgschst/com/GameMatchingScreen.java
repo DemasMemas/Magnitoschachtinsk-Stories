@@ -4,49 +4,80 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 
-public class GameMatchingScreen implements Screen, TCPConnectionListener {
+public class GameMatchingScreen implements Screen {
     final MainMgschst game;
-    OrthographicCamera camera;
+    final OrthographicCamera camera;
+    final Batch batch;
+    Stage stage;
+
     Texture background;
 
+    TextButton exitButton;
+    TextButton refreshButton;
 
     VerticalGroup gameGroup;
-    static TCPConnection currentPlayerConnection;
+    Table gameContainerTable;
+    ScrollPane gameScrollPane;
+    Skin neonSkin = new Skin(Gdx.files.internal("Skins/neon/skin/neon-ui.json"));
+    Connection conn = new DatabaseHandler().getConnection();
+
+    TCPConnection currentPlayerConnection;
 
     public GameMatchingScreen(final MainMgschst game) {
         this.game = game;
+        stage = new Stage();
+        Gdx.input.setInputProcessor(stage);
 
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false);
+        camera = game.getCamera();
+        batch = game.batch;;
 
-        background = new Texture(Gdx.files.internal("MenuAssets/main_menu_bg.jpg"));
+        background = new Texture(Gdx.files.internal("MenuAssets/game_matching_bg.jpg"));
 
-        game.stage = new Stage();
-        Gdx.input.setInputProcessor(game.stage);
-
-        try {
-            currentPlayerConnection = new TCPConnection(this, "localhost", 8080);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        currentPlayerConnection = game.getPlayerConnection();
         currentPlayerConnection.sendString("getGames");
 
-        gameGroup = new VerticalGroup();
-        gameGroup.setPosition(350, 650);
-        game.stage.addActor(gameGroup);
+
+        exitButton = new TextButton("Выйти", game.getTextButtonStyle());
+        stage.addActor(exitButton);
+        exitButton.setPosition(100, 100);
+
+        exitButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MainMenuScreen(game));
+            }
+        });
+
+        refreshButton = new TextButton("Обновить", game.getTextButtonStyle());
+        stage.addActor(refreshButton);
+        refreshButton.setPosition(500, 100);
+
+        refreshButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (game.isButtonPressed()) {
+                    currentPlayerConnection.sendString("getGames");
+                }
+            }
+        });
+
     }
 
     @Override
@@ -55,23 +86,28 @@ public class GameMatchingScreen implements Screen, TCPConnectionListener {
         ScreenUtils.clear(0, 0, 0, 1);
 
         camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
 
-        game.batch.begin();
-        game.batch.draw(background, 0, 0);
-        game.batch.end();
+        batch.begin();
+        batch.draw(background, 0, 0);
+        batch.end();
 
-        game.stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-        game.stage.draw();
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
+        stage.draw();
     }
 
     public void setUpGameList(ArrayList<String> gameList) {
+        stage.getActors().removeValue(gameContainerTable, true);
         gameGroup = new VerticalGroup();
-        gameGroup.setPosition(350, 650);
-        game.stage.addActor(gameGroup);
+        gameGroup.pad(25f);
+        gameGroup.addActor(new Label("Список текущих игр", game.getMainLabelStyle()));
+        gameGroup.addActor(new Label("--------------------------", game.getMainLabelStyle()));
+
         int counter = 0;
         String tempFirstName = "";
         String tempSecondName = "";
+        int tempGameID = 0;
+
         for (String value : gameList) {
             counter++;
             if (counter == 1) {
@@ -81,13 +117,33 @@ public class GameMatchingScreen implements Screen, TCPConnectionListener {
                 tempSecondName = value;
             }
             if (counter == 3) {
+                tempGameID = Integer.parseInt(value);
+            }
+            if (counter == 4) {
                 Label tempLabel = new Label("", game.getMainLabelStyle());
                 tempLabel.setAlignment(Align.center);
                 // присоединение к игре невозможно, если она уже идёт
                 if (!tempSecondName.equals(" ")) {
-                    tempLabel.setText(tempFirstName + " против " + tempSecondName);
+                    tempLabel.setText(tempFirstName + "\nпротив\n" + tempSecondName);
                 } else {
-                    tempLabel.setText(tempFirstName + " ожидает соперника");
+                    try {
+                        PreparedStatement preparedStatement = conn.prepareStatement("SELECT level, rating FROM users WHERE nickname = ?");
+                        preparedStatement.setString(1, tempFirstName);
+                        ResultSet resultSet = preparedStatement.executeQuery();
+                        resultSet.next();
+                        if (Integer.parseInt(value) == 0) {
+                            tempLabel.setText(tempFirstName + "\nожидает соперника.\nБез пароля.\nУровень: " +
+                                    resultSet.getInt("level") + "   Рейтинг: " + resultSet.getInt("rating"));
+                        } else {
+                            tempLabel.setText(tempFirstName + "\nожидает соперника\nУровень: " +
+                                    resultSet.getInt("level") + "   Рейтинг: " + resultSet.getInt("rating"));
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("Жеееесть SQL недоступен");
+                    }
+
+
+                    int finalTempGameID = tempGameID;
                     tempLabel.addListener(new ClickListener() {
                         @Override
                         public void clicked(InputEvent event, float x, float y) {
@@ -108,7 +164,7 @@ public class GameMatchingScreen implements Screen, TCPConnectionListener {
                                 public void clicked(InputEvent event, float x, float y) {
                                     dialog.hide();
                                     currentPlayerConnection.sendString("joinGame," + game.getCurrentUserName() +
-                                            "," + tempTextField.getText().trim() + "," + Integer.parseInt(value));
+                                            "," + tempTextField.getText().trim() + "," + finalTempGameID);
                                 }
                             });
                             dialog.getButtonTable().add(startButton);
@@ -122,14 +178,23 @@ public class GameMatchingScreen implements Screen, TCPConnectionListener {
                             });
                             dialog.getButtonTable().add(closeDialogButton);
                             dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
-                            dialog.show(game.stage);
+                            dialog.show(stage);
                         }
                     });
                 }
                 gameGroup.addActor(tempLabel);
+                gameGroup.addActor(new Label("--------------------------", game.getMainLabelStyle()));
                 counter = 0;
             }
         }
+        gameScrollPane = new ScrollPane(gameGroup, neonSkin);
+        gameScrollPane.setOverscroll(false, true);
+        gameScrollPane.setScrollingDisabled(true, false);
+        gameContainerTable = new Table();
+        gameContainerTable.add(gameScrollPane);
+        stage.addActor(gameContainerTable);
+        gameContainerTable.setPosition(25, 200);
+        gameContainerTable.setSize(800, 800);
     }
 
     @Override
@@ -138,17 +203,15 @@ public class GameMatchingScreen implements Screen, TCPConnectionListener {
 
     @Override
     public void pause() {
-
     }
 
     @Override
     public void resume() {
-
     }
 
     @Override
     public void hide() {
-
+        dispose();
     }
 
     @Override
@@ -157,46 +220,7 @@ public class GameMatchingScreen implements Screen, TCPConnectionListener {
 
     @Override
     public void dispose() {
-        game.stage.dispose();
         background.dispose();
-    }
-
-    @Override
-    public void onConnectionReady(TCPConnection tcpConnection) {
-    }
-
-    @Override
-    public void onReceiveString(TCPConnection tcpConnection, String value) {
-        Gdx.app.postRunnable(() -> {
-            // обработка обратной связи, взаимодействие с объектом GameScreen
-            ArrayList<String> commandList = new ArrayList<>();
-            Collections.addAll(commandList, value.split(","));
-            switch (commandList.get(0)) {
-                case "games" -> {
-                    commandList.remove(0);
-                    setUpGameList(commandList);
-                }
-                case "writeChatMsg" -> System.out.println(commandList.get(1) + ": " + commandList.get(2));
-                case "acceptJoin" -> {
-                    game.setScreen(new GameScreen(game, currentPlayerConnection));
-                    dispose();
-                }
-            }
-        });
-    }
-
-    @Override
-    public void onDisconnect(TCPConnection tcpConnection) {
-        printMessage("Connection close" + game.getCurrentUserName());
-    }
-
-    @Override
-    public void onException(TCPConnection tcpConnection, IOException e) {
-        printMessage("Connection exception: " + e);
-    }
-
-    // отправка справочной информации на сервер
-    private synchronized void printMessage(String message) {
-        currentPlayerConnection.sendString(message);
+        stage.dispose();
     }
 }

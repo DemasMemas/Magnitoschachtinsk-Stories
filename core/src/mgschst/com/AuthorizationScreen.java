@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -18,8 +19,10 @@ import java.sql.SQLException;
 
 public class AuthorizationScreen implements Screen {
     final MainMgschst game;
-    OrthographicCamera camera;
+    final OrthographicCamera camera;
+    final Batch batch;
     Texture background;
+    Stage stage;
 
     TextButton loginButton;
     TextButton registerButton;
@@ -32,39 +35,38 @@ public class AuthorizationScreen implements Screen {
 
     public AuthorizationScreen(final MainMgschst game) {
         this.game = game;
+        stage = new Stage();
+        Gdx.input.setInputProcessor(stage);
 
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false);
+        camera = game.getCamera();
+        batch = game.batch;
 
         background = new Texture(Gdx.files.internal("AuthorizationAssets/authorization_bg.jpg"));
 
-        game.stage = new Stage();
-        Gdx.input.setInputProcessor(game.stage);
-
         loginButton = new TextButton("Войти", game.getTextButtonStyle());
-        game.stage.addActor(loginButton);
-        loginButton.setPosition(game.stage.getWidth()/2 - 68, game.stage.getHeight() - 700);
+        stage.addActor(loginButton);
+        loginButton.setPosition(stage.getWidth()/2 - 68, stage.getHeight() - 700);
 
         registerButton = new TextButton("Зарегистрироваться", game.getTextButtonStyle());
-        game.stage.addActor(registerButton);
-        registerButton.setPosition(game.stage.getWidth()/2 - 236, game.stage.getHeight() - 750);
+        stage.addActor(registerButton);
+        registerButton.setPosition(stage.getWidth()/2 - 236, stage.getHeight() - 750);
 
         exitGameButton = new TextButton("Выйти", game.getTextButtonStyle());
-        game.stage.addActor(exitGameButton);
-        exitGameButton.setPosition(game.stage.getWidth()/2 - 68, game.stage.getHeight() - 850);
+        stage.addActor(exitGameButton);
+        exitGameButton.setPosition(stage.getWidth()/2 - 68, stage.getHeight() - 850);
 
         loginField = new TextField("", game.getTextFieldStyle());
-        game.stage.addActor(loginField);
-        loginField.setPosition(game.stage.getWidth()/2 - 175, game.stage.getHeight() - 550);
+        stage.addActor(loginField);
+        loginField.setPosition(stage.getWidth()/2 - 175, stage.getHeight() - 550);
         loginField.setWidth(400f);
         loginField.setMessageText("Введите логин...");
         loginField.setMaxLength(16);
 
         passwordField = new TextField("", game.getTextFieldStyle());
-        game.stage.addActor(passwordField);
+        stage.addActor(passwordField);
         passwordField.setPasswordMode(true);
         passwordField.setPasswordCharacter('*');
-        passwordField.setPosition(game.stage.getWidth()/2 - 175, game.stage.getHeight() - 600);
+        passwordField.setPosition(stage.getWidth()/2 - 175, stage.getHeight() - 600);
         passwordField.setWidth(400f);
         passwordField.setMessageText("Введите пароль..");
         passwordField.setMaxLength(20);
@@ -82,7 +84,6 @@ public class AuthorizationScreen implements Screen {
                         if (resultSet.next()){
                             game.setCurrentUserName(loginField.getText().trim());
 
-                            dispose();
                             game.setScreen(new MainMenuScreen(game));
                         } else {
                             loginField.setText("");
@@ -115,7 +116,6 @@ public class AuthorizationScreen implements Screen {
                                 preparedStatement.setString(2, passwordField.getText().trim());
                                 preparedStatement.executeUpdate();
 
-                                dispose();
                                 game.setScreen(new MainMenuScreen(game));
                             }
                         } catch (SQLException throwables) {
@@ -128,16 +128,13 @@ public class AuthorizationScreen implements Screen {
 
         exitGameButton.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent event, Actor actor) {
-                if (game.isButtonPressed()) {
-                    game.setButtonPressed(true);
-                    game.dispose();
-                Gdx.app.exit();} }});
+                game.getPlayerConnection().disconnect();
+                game.dispose();
+                Gdx.app.exit(); }});
     }
 
     @Override
-    public void show() {
-
-    }
+    public void show() { }
 
     @Override
     public void render(float delta) {
@@ -145,24 +142,24 @@ public class AuthorizationScreen implements Screen {
         ScreenUtils.clear(0, 0, 0, 1);
 
         camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
 
-        game.batch.begin();
-        game.batch.draw(background, 0, 0);
-        game.mainFont.draw(game.batch, "Магнитошахтинск ждёт", game.stage.getWidth()/2 - 255, game.stage.getHeight() - 400);
-        game.batch.end();
+        batch.begin();
+        batch.draw(background, 0, 0);
+        game.mainFont.draw(batch, "Магнитошахтинск ждёт", stage.getWidth()/2 - 255, stage.getHeight() - 400);
+        batch.end();
 
-        game.stage.draw();
+        stage.draw();
     }
 
     @Override public void resize(int width, int height) { }
     @Override public void pause() { }
     @Override public void resume() { }
-    @Override public void hide() { }
+    @Override public void hide() { dispose(); }
 
     @Override
     public void dispose() {
         background.dispose();
-        game.stage.dispose();
+        stage.dispose();
     }
 }

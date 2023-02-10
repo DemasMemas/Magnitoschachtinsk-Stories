@@ -14,7 +14,7 @@ public class TCPConnection {
     private final BufferedReader in;
     private final BufferedWriter out;
 
-    public TCPConnection(TCPConnectionListener eventListener, String ipAddress, int port) throws IOException {
+    public TCPConnection(TCPConnectionListener eventListener, String ipAddress, int port) {
         this(eventListener, Gdx.net.newClientSocket(Net.Protocol.TCP, ipAddress, port, null));
     }
 
@@ -29,7 +29,8 @@ public class TCPConnection {
                 try {
                     eventListener.onConnectionReady(TCPConnection.this);
                     while (!thread.isInterrupted()) {
-                        eventListener.onReceiveString(TCPConnection.this, in.readLine());
+                        try { eventListener.onReceiveString(TCPConnection.this, in.readLine());
+                        } catch (NullPointerException e){ break; }
                     }
                 } catch (IOException e) {
                     eventListener.onException(TCPConnection.this, e);
@@ -51,7 +52,7 @@ public class TCPConnection {
         }
     }
 
-    private synchronized void disconnect() {
+    public synchronized void disconnect() {
         thread.interrupt();
         socket.dispose();
     }

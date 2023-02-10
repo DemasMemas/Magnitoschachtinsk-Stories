@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -26,14 +27,16 @@ import java.util.Random;
 
 public class ProfileScreen implements Screen {
     final MainMgschst game;
-    OrthographicCamera camera;
+    final OrthographicCamera camera;
+    final Batch batch;
+    Stage stage;
     Texture background;
     Texture profilePicture;
     Texture experienceBar;
     Texture experienceProgress;
     Texture dogtag;
     Texture rankIcon;
-    TextButton exitGameButton;
+    TextButton exitButton;
     Image cardBox;
 
     ScrollPane cardPane;
@@ -75,9 +78,11 @@ public class ProfileScreen implements Screen {
 
     public ProfileScreen(final MainMgschst game) {
         this.game = game;
+        stage = new Stage();
+        Gdx.input.setInputProcessor(stage);
 
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false);
+        camera = game.getCamera();
+        batch = game.batch;
 
         fillConditions();
 
@@ -126,21 +131,14 @@ public class ProfileScreen implements Screen {
             throwables.printStackTrace();
         }
 
-        game.stage = new Stage();
-        Gdx.input.setInputProcessor(game.stage);
+        exitButton = new TextButton("Выйти", game.getTextButtonStyle());
+        stage.addActor(exitButton);
+        exitButton.setPosition(stage.getWidth() / 2, stage.getHeight() - 550);
 
-        exitGameButton = new TextButton("Выйти", game.getTextButtonStyle());
-        game.stage.addActor(exitGameButton);
-        exitGameButton.setPosition(game.stage.getWidth() / 2, game.stage.getHeight() - 550);
-
-        exitGameButton.addListener(new ChangeListener() {
+        exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (game.isButtonPressed()) {
-                    game.setButtonPressed(true);
-                    dispose();
-                    game.setScreen(new MainMenuScreen(game));
-                }
+                game.setScreen(new MainMenuScreen(game));
             }
         });
 
@@ -152,8 +150,8 @@ public class ProfileScreen implements Screen {
         cardContainerTable = new Table();
         cardContainerTable.add(cardPane).width(600f).height(310f);
         cardContainerTable.row();
-        game.stage.addActor(cardContainerTable);
-        cardContainerTable.setPosition(game.stage.getWidth() - 450, game.stage.getHeight() - 300);
+        stage.addActor(cardContainerTable);
+        cardContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 300);
 
         boardTable = new Table();
         fillBoards();
@@ -163,8 +161,8 @@ public class ProfileScreen implements Screen {
         boardContainerTable = new Table();
         boardContainerTable.add(boardPane).width(600f).height(330f);
         boardContainerTable.row();
-        game.stage.addActor(boardContainerTable);
-        boardContainerTable.setPosition(game.stage.getWidth() - 450, game.stage.getHeight() - 655);
+        stage.addActor(boardContainerTable);
+        boardContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 655);
 
         avaTable = new Table();
         fillAvas();
@@ -174,8 +172,8 @@ public class ProfileScreen implements Screen {
         avaContainerTable = new Table();
         avaContainerTable.add(avaPane).width(600f).height(160f);
         avaContainerTable.row();
-        game.stage.addActor(avaContainerTable);
-        avaContainerTable.setPosition(game.stage.getWidth() - 450, game.stage.getHeight() - 940);
+        stage.addActor(avaContainerTable);
+        avaContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 940);
 
         deckTable = new Table();
         fillDecks();
@@ -185,8 +183,8 @@ public class ProfileScreen implements Screen {
         deckContainerTable = new Table();
         deckContainerTable.add(deckPane).width(700f).height(400f);
         deckContainerTable.row();
-        game.stage.addActor(deckContainerTable);
-        deckContainerTable.setPosition(350, game.stage.getHeight() - 660);
+        stage.addActor(deckContainerTable);
+        deckContainerTable.setPosition(350, stage.getHeight() - 660);
 
         cardBox = new Image(new Texture(Gdx.files.internal("ProfileAssets/cardbox.png")));
         cardBox.addListener(new ClickListener() {
@@ -314,11 +312,11 @@ public class ProfileScreen implements Screen {
 
                 dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
 
-                dialog.show(game.stage);
+                dialog.show(stage);
             }
         });
-        cardBox.setPosition(game.stage.getWidth() / 2 - 200, game.stage.getHeight() - 900);
-        game.stage.addActor(cardBox);
+        cardBox.setPosition(stage.getWidth() / 2 - 200, stage.getHeight() - 900);
+        stage.addActor(cardBox);
     }
 
     @Override
@@ -327,64 +325,63 @@ public class ProfileScreen implements Screen {
         ScreenUtils.clear(0, 0, 0, 1);
 
         camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
 
-        game.batch.begin();
-        game.batch.draw(background, 0, 0);
-        game.batch.draw(profilePicture, 100, game.stage.getHeight() - 228);
-        game.mainFont.draw(game.batch, "Имя", 278, game.stage.getHeight() - 133);
-        game.mainFont.draw(game.batch, nickname, 278, game.stage.getHeight() - 183);
-        game.mainFont.draw(game.batch, "Уровень", 100, game.stage.getHeight() - 258);
-        game.mainFont.draw(game.batch, level.toString(), 300, game.stage.getHeight() - 258);
+        batch.begin();
+        batch.draw(background, 0, 0);
+        batch.draw(profilePicture, 100, stage.getHeight() - 228);
+        game.mainFont.draw(batch, "Имя", 278, stage.getHeight() - 133);
+        game.mainFont.draw(batch, nickname, 278, stage.getHeight() - 183);
+        game.mainFont.draw(batch, "Уровень", 100, stage.getHeight() - 258);
+        game.mainFont.draw(batch, level.toString(), 300, stage.getHeight() - 258);
 
-        game.batch.draw(experienceBar, 100, game.stage.getHeight() - experienceBar.getHeight() - 300);
-        game.batch.draw(experienceProgress, 103, game.stage.getHeight() - experienceProgress.getHeight() - 303, experienceProgress.getWidth() * ((float) experience / (level * 25)), experienceProgress.getHeight());
-        game.mainFont.draw(game.batch, experience.toString(), 100, game.stage.getHeight() - 340);
-        game.mainFont.draw(game.batch, String.valueOf(level * 25), 350, game.stage.getHeight() - 340);
+        batch.draw(experienceBar, 100, stage.getHeight() - experienceBar.getHeight() - 300);
+        batch.draw(experienceProgress, 103, stage.getHeight() - experienceProgress.getHeight() - 303, experienceProgress.getWidth() * ((float) experience / (level * 25)), experienceProgress.getHeight());
+        game.mainFont.draw(batch, experience.toString(), 100, stage.getHeight() - 340);
+        game.mainFont.draw(batch, String.valueOf(level * 25), 350, stage.getHeight() - 340);
 
-        game.batch.draw(dogtag, 445, game.stage.getHeight() - dogtag.getHeight() - 254);
-        game.mainFont.draw(game.batch, dogtags.toString(), 575, game.stage.getHeight() - dogtag.getHeight() - 200);
+        batch.draw(dogtag, 445, stage.getHeight() - dogtag.getHeight() - 254);
+        game.mainFont.draw(batch, dogtags.toString(), 575, stage.getHeight() - dogtag.getHeight() - 200);
 
-        game.batch.draw(rankIcon, 500, game.stage.getHeight() - 503);
-        game.mainFont.draw(game.batch, "Ваш рейтинг: " + rating, 100, game.stage.getHeight() - 400);
-        game.mainFont.draw(game.batch, rankName, 100, game.stage.getHeight() - 450);
+        batch.draw(rankIcon, 500, stage.getHeight() - 503);
+        game.mainFont.draw(batch, "Ваш рейтинг: " + rating, 100, stage.getHeight() - 400);
+        game.mainFont.draw(batch, rankName, 100, stage.getHeight() - 450);
 
-        game.mainFont.draw(game.batch, "Рубашка карт", game.stage.getWidth() - 600, game.stage.getHeight() - 100);
-        game.mainFont.draw(game.batch, "Игровое поле", game.stage.getWidth() - 600, game.stage.getHeight() - 455);
-        game.mainFont.draw(game.batch, "Аватар", game.stage.getWidth() - 550, game.stage.getHeight() - 820);
+        game.mainFont.draw(batch, "Рубашка карт", stage.getWidth() - 600, stage.getHeight() - 100);
+        game.mainFont.draw(batch, "Игровое поле", stage.getWidth() - 600, stage.getHeight() - 455);
+        game.mainFont.draw(batch, "Аватар", stage.getWidth() - 550, stage.getHeight() - 820);
 
-        game.mainFont.draw(game.batch, "Колоды", 235, game.stage.getHeight() - 550);
+        game.mainFont.draw(batch, "Колоды", 235, stage.getHeight() - 550);
 
-        game.batch.end();
+        batch.end();
 
-        game.stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-        game.stage.draw();
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
+        stage.draw();
     }
 
     @Override
-    public void resize(int width, int height) {
-    }
+    public void resize(int width, int height) { }
 
     @Override
-    public void pause() {
-    }
+    public void pause() { }
 
     @Override
-    public void resume() {
-    }
+    public void resume() { }
 
     @Override
-    public void hide() {
-    }
+    public void hide() {dispose(); }
 
     @Override
-    public void show() {
-    }
+    public void show() { }
 
     @Override
     public void dispose() {
         background.dispose();
-        game.stage.dispose();
+        profilePicture.dispose();
+        experienceBar.dispose();
+        experienceProgress.dispose();
+        dogtag.dispose();
+        rankIcon.dispose();
     }
 
     public void fillRanks() {
@@ -488,7 +485,6 @@ public class ProfileScreen implements Screen {
                             preparedStatement.setString(2, game.getCurrentUserName());
                             preparedStatement.executeUpdate();
 
-                            dispose();
                             game.setScreen(new ProfileScreen(game));
                         } catch (SQLException exception) {
                             exception.printStackTrace();
@@ -503,7 +499,6 @@ public class ProfileScreen implements Screen {
                 editTempImage.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        dispose();
                         game.setScreen(new DeckBuildingScreen(game, Integer.parseInt(editTempImage.getName().split(" ")[1])));
                     }
                 });
@@ -542,12 +537,11 @@ public class ProfileScreen implements Screen {
                                             });
                                             dialog.getButtonTable().add(closeButton);
                                             dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
-                                            dialog.show(game.stage);
+                                            dialog.show(stage);
                                         } else {
                                             PreparedStatement preparedStatement = conn.prepareStatement("DELETE FROM decks WHERE deck_id = ?");
                                             preparedStatement.setInt(1, Integer.parseInt(deleteTempImage.getName().split(" ")[1]));
                                             preparedStatement.executeUpdate();
-                                            dispose();
                                             game.setScreen(new ProfileScreen(game));
                                         }
                                     } catch (SQLException exception) {
@@ -573,7 +567,7 @@ public class ProfileScreen implements Screen {
 
                         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
 
-                        dialog.show(game.stage);
+                        dialog.show(stage);
                     }
                 });
 
@@ -587,7 +581,6 @@ public class ProfileScreen implements Screen {
             tempLabel.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    dispose();
                     game.setScreen(new DeckBuildingScreen(game, 0));
                 }
             });
@@ -595,17 +588,14 @@ public class ProfileScreen implements Screen {
             Image tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/left_plus.png")));
             tempImage.addListener(new ClickListener() {
                 @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    dispose();
-                    game.setScreen(new DeckBuildingScreen(game, 0));
-                }
+                public void clicked(InputEvent event, float x, float y)
+                { game.setScreen(new DeckBuildingScreen(game, 0)); }
             });
             deckTable.add(tempImage);
             tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/right_plus.png")));
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    dispose();
                     game.setScreen(new DeckBuildingScreen(game, 0));
                 }
             });
@@ -792,7 +782,7 @@ public class ProfileScreen implements Screen {
 
         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
 
-        dialog.show(game.stage);
+        dialog.show(stage);
     }
 
     public void showSuccessfulPurchaseDialog() {
@@ -816,7 +806,6 @@ public class ProfileScreen implements Screen {
                     game.setButtonPressed(true);
                     dialog.hide();
                     if (tempSuccess) {
-                        dispose();
                         game.setScreen(new ProfileScreen(game));
                     }
                 }
@@ -826,7 +815,7 @@ public class ProfileScreen implements Screen {
         dialog.getButtonTable().add(closeButton);
         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
 
-        dialog.show(game.stage);
+        dialog.show(stage);
     }
 
     public Card getCardByID(int id) {
@@ -964,7 +953,6 @@ public class ProfileScreen implements Screen {
                 if (game.isButtonPressed()) {
                     game.setButtonPressed(true);
                     dialog.hide();
-                    dispose();
                     game.setScreen(new ProfileScreen(game));
                 }
             }
@@ -974,7 +962,7 @@ public class ProfileScreen implements Screen {
 
         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
 
-        dialog.show(game.stage);
+        dialog.show(stage);
     }
 
     public AlphaAction createAlphaAction() {

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -23,7 +24,9 @@ import java.util.HashMap;
 public class DeckBuildingScreen implements Screen {
     final MainMgschst game;
     Integer deckID;
-    OrthographicCamera camera;
+    final OrthographicCamera camera;
+    final Batch batch;
+    Stage stage;
     Texture background;
 
     TextField deckNameField;
@@ -59,16 +62,15 @@ public class DeckBuildingScreen implements Screen {
 
     public DeckBuildingScreen(final MainMgschst game, int newDeckID) {
         this.game = game;
+        stage = new Stage();
+        Gdx.input.setInputProcessor(stage);
 
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false);
+        camera = game.getCamera();
+        batch = game.batch;
 
         background = new Texture(Gdx.files.internal("DeckAssets/deck_bg.jpg"));
 
         deckID = newDeckID;
-
-        game.stage = new Stage();
-        Gdx.input.setInputProcessor(game.stage);
 
         // считывание карт пользователя для учета  общей статистики каждой карты
         try {
@@ -125,65 +127,61 @@ public class DeckBuildingScreen implements Screen {
         objectiveCountLabel.setWidth(300);
         objectiveCountLabel.setAlignment(Align.center);
         objectiveCountLabel.setWrap(true);
-        game.stage.addActor(objectiveCountLabel);
+        stage.addActor(objectiveCountLabel);
         rareCardsCountLabel = new Label("Редких карт:\n" + rareCardsAmount + "/15", game.getMainLabelStyle());
         rareCardsCountLabel.setPosition(1600, 275);
         rareCardsCountLabel.setWidth(300);
         rareCardsCountLabel.setAlignment(Align.center);
         rareCardsCountLabel.setWrap(true);
-        game.stage.addActor(rareCardsCountLabel);
+        stage.addActor(rareCardsCountLabel);
         superRareCardsCountLabel = new Label("Очень редких карт: " + superRareCardsAmount + "/5", game.getMainLabelStyle());
         superRareCardsCountLabel.setPosition(1600, 155);
         superRareCardsCountLabel.setWidth(300);
         superRareCardsCountLabel.setAlignment(Align.center);
         superRareCardsCountLabel.setWrap(true);
-        game.stage.addActor(superRareCardsCountLabel);
+        stage.addActor(superRareCardsCountLabel);
         peopleCardsCountLabel = new Label("Карт людей: 5/" + peopleCardAmount + "/10", game.getMainLabelStyle());
         peopleCardsCountLabel.setPosition(1600, 610);
         peopleCardsCountLabel.setWidth(300);
         peopleCardsCountLabel.setAlignment(Align.center);
         peopleCardsCountLabel.setWrap(true);
-        game.stage.addActor(peopleCardsCountLabel);
+        stage.addActor(peopleCardsCountLabel);
         buildingsCardsCountLabel = new Label("Карт построек: 3/" + buildingCardAmount + "/10", game.getMainLabelStyle());
         buildingsCardsCountLabel.setPosition(1600, 455);
         buildingsCardsCountLabel.setWidth(300);
         buildingsCardsCountLabel.setAlignment(Align.center);
         buildingsCardsCountLabel.setWrap(true);
-        game.stage.addActor(buildingsCardsCountLabel);
+        stage.addActor(buildingsCardsCountLabel);
         deckSizeCountLabel = new Label("Карт в колоде:\n" + deckSize + "/50", game.getMainLabelStyle());
         deckSizeCountLabel.setPosition(1600, 900);
         deckSizeCountLabel.setWidth(300);
         deckSizeCountLabel.setAlignment(Align.center);
         deckSizeCountLabel.setWrap(true);
-        game.stage.addActor(deckSizeCountLabel);
+        stage.addActor(deckSizeCountLabel);
 
         deckNameField.setMessageText("Введите имя колоды");
         deckNameField.setMaxLength(16);
         deckNameField.setWidth(600f);
-        deckNameField.setPosition(330, game.stage.getHeight() - 70);
-        game.stage.addActor(deckNameField);
+        deckNameField.setPosition(330, stage.getHeight() - 70);
+        stage.addActor(deckNameField);
 
         deckNameLabel = new Label("Имя колоды:", game.getMainLabelStyle());
-        deckNameLabel.setPosition(50, game.stage.getHeight() - 70);
-        game.stage.addActor(deckNameLabel);
+        deckNameLabel.setPosition(50, stage.getHeight() - 70);
+        stage.addActor(deckNameLabel);
 
         exitButton = new TextButton("Выйти без сохранения", game.getTextButtonStyle());
-        exitButton.setPosition(50, game.stage.getHeight() - 1060);
+        exitButton.setPosition(50, stage.getHeight() - 1060);
         exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (game.isButtonPressed()) {
-                    game.setButtonPressed(true);
-                    dispose();
-                    game.setScreen(new ProfileScreen(game));
-                }
+                game.setScreen(new ProfileScreen(game));
             }
         });
-        game.stage.addActor(exitButton);
+        stage.addActor(exitButton);
 
         // переписать принцип работы
         saveButton = new TextButton("Сохранить", game.getTextButtonStyle());
-        saveButton.setPosition(game.stage.getWidth() - saveButton.getWidth() - 50, game.stage.getHeight() - 1060);
+        saveButton.setPosition(stage.getWidth() - saveButton.getWidth() - 50, stage.getHeight() - 1060);
         saveButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -212,7 +210,6 @@ public class DeckBuildingScreen implements Screen {
                                 preparedStatement.setString(3, String.valueOf(newCards));
                             }
                             preparedStatement.executeUpdate();
-                            dispose();
                             game.setScreen(new ProfileScreen(game));
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -224,7 +221,7 @@ public class DeckBuildingScreen implements Screen {
                 }
             }
         });
-        game.stage.addActor(saveButton);
+        stage.addActor(saveButton);
 
         cardTable = new Table();
         fillCards();
@@ -233,7 +230,7 @@ public class DeckBuildingScreen implements Screen {
         cardPane.setScrollingDisabled(true, false);
         cardContainerTable = new Table();
         cardContainerTable.add(cardPane);
-        game.stage.addActor(cardContainerTable);
+        stage.addActor(cardContainerTable);
         cardContainerTable.setPosition(0, 100);
         cardContainerTable.setSize(1700, 900);
     }
@@ -244,16 +241,14 @@ public class DeckBuildingScreen implements Screen {
         ScreenUtils.clear(0, 0, 0, 1);
 
         camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
 
-        game.batch.begin();
+        batch.begin();
+        batch.draw(background, 0, 0);
+        batch.end();
 
-        game.batch.draw(background, 0, 0);
-
-        game.batch.end();
-
-        game.stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-        game.stage.draw();
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
+        stage.draw();
 
         if (isCardStageActive) {
             cardStage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
@@ -274,7 +269,7 @@ public class DeckBuildingScreen implements Screen {
     }
 
     @Override
-    public void hide() {
+    public void hide() { dispose();
     }
 
     @Override
@@ -284,8 +279,8 @@ public class DeckBuildingScreen implements Screen {
 
     @Override
     public void dispose() {
-        game.stage.dispose();
         background.dispose();
+        stage.dispose();
     }
 
     public void fillCards() {
@@ -402,7 +397,7 @@ public class DeckBuildingScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 changeUIVisibilityIfCardStage(true);
                 isCardStageActive = false;
-                Gdx.input.setInputProcessor(game.stage);
+                Gdx.input.setInputProcessor(stage);
                 cardStage.dispose();
             }
         });
@@ -617,7 +612,7 @@ public class DeckBuildingScreen implements Screen {
         if (isCardStageActive) {
             dialog.show(cardStage);
         } else {
-            dialog.show(game.stage);
+            dialog.show(stage);
         }
     }
 }

@@ -4,10 +4,10 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -21,7 +21,6 @@ public class MainMgschst extends Game {
     public BitmapFont chosenFont;
     public BitmapFont smallFont;
     public BitmapFont normalFont;
-    public Stage stage;
     private TextButton.TextButtonStyle textButtonStyle;
     private TextField.TextFieldStyle textFieldStyle;
     private Label.LabelStyle chosenLabelStyle;
@@ -34,10 +33,14 @@ public class MainMgschst extends Game {
     private String currentUserName;
     private Music menuMusic;
     private final Random random = new Random();
-
+    private final OrthographicCamera camera = new OrthographicCamera();
+    private TCPConnection playerConnection;
+    private int currentGameID;
 
     @Override
     public void create() {
+        recreatePlayerConnection();
+        camera.setToOrtho(false);
         batch = new SpriteBatch();
 
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
@@ -118,7 +121,9 @@ public class MainMgschst extends Game {
         }
     }
 
-    @Override public void dispose() { }
+    @Override public void dispose() {
+        menuMusic.dispose();
+    }
 
     public TextButton.TextButtonStyle getTextButtonStyle() {
         return textButtonStyle;
@@ -167,6 +172,22 @@ public class MainMgschst extends Game {
     public String getCurrentUserName() {
         return this.currentUserName;
     }
+
+    public OrthographicCamera getCamera() {
+        return camera;
+    }
+
+    public TCPConnection getPlayerConnection(){ return playerConnection;}
+
+    public int getCurrentGameID() { return currentGameID; }
+
+    public void setCurrentGameID(int currentGameID) { this.currentGameID = currentGameID; }
+
+    public void recreatePlayerConnection(){ try {
+        playerConnection = new TCPConnection(new TCPConnectionHandler(this), "localhost", 8080);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }}
 
     private void playMenuMusic() {
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal
