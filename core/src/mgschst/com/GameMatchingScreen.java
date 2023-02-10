@@ -27,7 +27,7 @@ public class GameMatchingScreen implements Screen {
     final Batch batch;
     Stage stage;
 
-    Texture background;
+    Image background;
 
     TextButton exitButton;
     TextButton refreshButton;
@@ -46,9 +46,11 @@ public class GameMatchingScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         camera = game.getCamera();
-        batch = game.batch;;
+        batch = game.batch;
 
-        background = new Texture(Gdx.files.internal("MenuAssets/game_matching_bg.jpg"));
+        background = new Image(new Texture(Gdx.files.internal("MenuAssets/game_matching_bg.jpg")));
+        background.setPosition(0,0);
+        stage.addActor(background);
 
         currentPlayerConnection = game.getPlayerConnection();
         currentPlayerConnection.sendString("getGames");
@@ -78,6 +80,12 @@ public class GameMatchingScreen implements Screen {
             }
         });
 
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
+        for (Actor actor:stage.getActors()) {
+            actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
+            actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
+        }
     }
 
     @Override
@@ -89,7 +97,6 @@ public class GameMatchingScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        batch.draw(background, 0, 0);
         batch.end();
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
@@ -193,8 +200,8 @@ public class GameMatchingScreen implements Screen {
         gameContainerTable = new Table();
         gameContainerTable.add(gameScrollPane);
         stage.addActor(gameContainerTable);
-        gameContainerTable.setPosition(25, 200);
-        gameContainerTable.setSize(800, 800);
+        gameContainerTable.setPosition(25 * game.xScaler, 200 * game.yScaler);
+        gameContainerTable.setSize(800 * game.xScaler, 800 * game.yScaler);
     }
 
     @Override
@@ -220,7 +227,6 @@ public class GameMatchingScreen implements Screen {
 
     @Override
     public void dispose() {
-        background.dispose();
         stage.dispose();
     }
 }

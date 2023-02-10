@@ -27,7 +27,7 @@ public class DeckBuildingScreen implements Screen {
     final OrthographicCamera camera;
     final Batch batch;
     Stage stage;
-    Texture background;
+    Image background;
 
     TextField deckNameField;
     TextButton saveButton;
@@ -68,7 +68,9 @@ public class DeckBuildingScreen implements Screen {
         camera = game.getCamera();
         batch = game.batch;
 
-        background = new Texture(Gdx.files.internal("DeckAssets/deck_bg.jpg"));
+        background = new Image(new Texture(Gdx.files.internal("DeckAssets/deck_bg.jpg")));
+        background.setPosition(0,0);
+        stage.addActor(background);
 
         deckID = newDeckID;
 
@@ -233,6 +235,13 @@ public class DeckBuildingScreen implements Screen {
         stage.addActor(cardContainerTable);
         cardContainerTable.setPosition(0, 100);
         cardContainerTable.setSize(1700, 900);
+
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
+        for (Actor actor:stage.getActors()) {
+            actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
+            actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
+        }
     }
 
     @Override
@@ -244,7 +253,6 @@ public class DeckBuildingScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        batch.draw(background, 0, 0);
         batch.end();
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
@@ -279,7 +287,6 @@ public class DeckBuildingScreen implements Screen {
 
     @Override
     public void dispose() {
-        background.dispose();
         stage.dispose();
     }
 
@@ -543,6 +550,11 @@ public class DeckBuildingScreen implements Screen {
             }
         });
         cardStage.addActor(buyButton);
+
+        for (Actor actor:cardStage.getActors()) {
+            actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
+            actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
+        }
     }
 
     public void changeUIVisibilityIfCardStage(boolean status) {

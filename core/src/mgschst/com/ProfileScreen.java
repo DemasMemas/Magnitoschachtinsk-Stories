@@ -30,12 +30,12 @@ public class ProfileScreen implements Screen {
     final OrthographicCamera camera;
     final Batch batch;
     Stage stage;
-    Texture background;
-    Texture profilePicture;
-    Texture experienceBar;
-    Texture experienceProgress;
-    Texture dogtag;
-    Texture rankIcon;
+    Image background;
+    Image profilePicture;
+    Image experienceBar;
+    Image experienceProgress;
+    Image dogtag;
+    Image rankIcon;
     TextButton exitButton;
     Image cardBox;
 
@@ -86,17 +86,12 @@ public class ProfileScreen implements Screen {
 
         fillConditions();
 
-        background = new Texture(Gdx.files.internal("ProfileAssets/profile_bg.jpg"));
-        experienceBar = new Texture(Gdx.files.internal("Images/experience_bar.png"));
-        experienceProgress = new Texture(Gdx.files.internal("Images/experience_progress.png"));
-        dogtag = new Texture(Gdx.files.internal("Images/dogtag.png"));
-
         try {
             PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM users WHERE nickname = ?");
             preparedStatement.setString(1, game.getCurrentUserName());
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
-            profilePicture = new Texture(Gdx.files.internal("UserInfo/Avatars/" + resultSet.getString("profile_picture_path")));
+            profilePicture = new Image(new Texture(Gdx.files.internal("UserInfo/Avatars/" + resultSet.getString("profile_picture_path"))));
             nickname = resultSet.getString("nickname");
             level = resultSet.getInt("level");
             experience = resultSet.getInt("experience");
@@ -105,7 +100,7 @@ public class ProfileScreen implements Screen {
             cardPicturePath = resultSet.getString("card_picture_path");
             boardPicturePath = resultSet.getString("board_picture_path");
             profilePicturePath = resultSet.getString("profile_picture_path");
-            rankIcon = new Texture(Gdx.files.internal("UserInfo/Ranks/rank_" + ((rating - 99) / 100) + ".png"));
+            rankIcon = new Image(new Texture(Gdx.files.internal("UserInfo/Ranks/rank_" + ((rating - 99) / 100) + ".png")));
             activeDeckID = resultSet.getInt("active_deck");
             fillRanks();
 
@@ -116,7 +111,7 @@ public class ProfileScreen implements Screen {
                 }
             }
         } catch (SQLException throwables) {
-            profilePicture = new Texture(Gdx.files.internal("UserInfo/Avatars/ava_0.png"));
+            profilePicture = new Image(new Texture(Gdx.files.internal("UserInfo/Avatars/ava_0.png")));
             nickname = "Error on load";
             level = 0;
             experience = 0;
@@ -125,11 +120,30 @@ public class ProfileScreen implements Screen {
             cardPicturePath = "card_0.png";
             boardPicturePath = "board_0.png";
             profilePicturePath = "ava_0.png";
-            rankIcon = new Texture(Gdx.files.internal("UserInfo/Ranks/rank_0.png"));
+            rankIcon = new Image(new Texture(Gdx.files.internal("UserInfo/Ranks/rank_0.png")));
             rankName = "Error on load";
             activeDeckID = 0;
             throwables.printStackTrace();
         }
+
+        background = new Image(new Texture(Gdx.files.internal("ProfileAssets/profile_bg.jpg")));
+        background.setPosition(0,0);
+        experienceBar = new Image(new Texture(Gdx.files.internal("Images/experience_bar.png")));
+        experienceBar.setPosition(100, stage.getHeight() - experienceBar.getHeight() - 300);
+        experienceProgress = new Image(new Texture(Gdx.files.internal("Images/experience_progress.png")));
+        experienceProgress.setPosition(103, stage.getHeight() - experienceProgress.getHeight() - 303);
+        experienceProgress.setBounds(103, stage.getHeight() - experienceProgress.getHeight() - 303, experienceProgress.getWidth() * ((float) experience / (level * 25)), experienceProgress.getHeight());
+        dogtag = new Image(new Texture(Gdx.files.internal("Images/dogtag.png")));
+        dogtag.setPosition(445, stage.getHeight() - dogtag.getHeight() - 254);
+        profilePicture.setPosition(100, stage.getHeight() - 228);
+        rankIcon.setPosition(500, stage.getHeight() - 503);
+
+        stage.addActor(background);
+        stage.addActor(experienceBar);
+        stage.addActor(experienceProgress);
+        stage.addActor(dogtag);
+        stage.addActor(profilePicture);
+        stage.addActor(rankIcon);
 
         exitButton = new TextButton("Выйти", game.getTextButtonStyle());
         stage.addActor(exitButton);
@@ -317,6 +331,65 @@ public class ProfileScreen implements Screen {
         });
         cardBox.setPosition(stage.getWidth() / 2 - 200, stage.getHeight() - 900);
         stage.addActor(cardBox);
+
+        Label tempLabel = new Label("Имя", game.getMainLabelStyle());
+        tempLabel.setPosition(278, stage.getHeight() - 158);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label(nickname, game.getMainLabelStyle());
+        tempLabel.setPosition(278, stage.getHeight() - 208);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label("Уровень", game.getMainLabelStyle());
+        tempLabel.setPosition(100, stage.getHeight() - 283);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label(level.toString(), game.getMainLabelStyle());
+        tempLabel.setPosition(300, stage.getHeight() - 283);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label(experience.toString(), game.getMainLabelStyle());
+        tempLabel.setPosition(100, stage.getHeight() - 365);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label(String.valueOf(level * 25), game.getMainLabelStyle());
+        tempLabel.setPosition(350, stage.getHeight() - 365);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label(dogtags.toString(), game.getMainLabelStyle());
+        tempLabel.setPosition(575, stage.getHeight() - dogtag.getHeight() - 225);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label("Ваш рейтинг: " + rating, game.getMainLabelStyle());
+        tempLabel.setPosition(100, stage.getHeight() - 425);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label(rankName, game.getMainLabelStyle());
+        tempLabel.setPosition(100, stage.getHeight() - 475);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label("Рубашка карт", game.getMainLabelStyle());
+        tempLabel.setPosition(stage.getWidth() - 600, stage.getHeight() - 125);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label("Игровое поле", game.getMainLabelStyle());
+        tempLabel.setPosition(stage.getWidth() - 600, stage.getHeight() - 480);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label("Аватар", game.getMainLabelStyle());
+        tempLabel.setPosition(stage.getWidth() - 550, stage.getHeight() - 845);
+        stage.addActor(tempLabel);
+
+        tempLabel = new Label("Колоды", game.getMainLabelStyle());
+        tempLabel.setPosition(235, stage.getHeight() - 575);
+        stage.addActor(tempLabel);
+
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
+        for (Actor actor:stage.getActors()) {
+            actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
+            actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
+        }
     }
 
     @Override
@@ -328,31 +401,6 @@ public class ProfileScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        batch.draw(background, 0, 0);
-        batch.draw(profilePicture, 100, stage.getHeight() - 228);
-        game.mainFont.draw(batch, "Имя", 278, stage.getHeight() - 133);
-        game.mainFont.draw(batch, nickname, 278, stage.getHeight() - 183);
-        game.mainFont.draw(batch, "Уровень", 100, stage.getHeight() - 258);
-        game.mainFont.draw(batch, level.toString(), 300, stage.getHeight() - 258);
-
-        batch.draw(experienceBar, 100, stage.getHeight() - experienceBar.getHeight() - 300);
-        batch.draw(experienceProgress, 103, stage.getHeight() - experienceProgress.getHeight() - 303, experienceProgress.getWidth() * ((float) experience / (level * 25)), experienceProgress.getHeight());
-        game.mainFont.draw(batch, experience.toString(), 100, stage.getHeight() - 340);
-        game.mainFont.draw(batch, String.valueOf(level * 25), 350, stage.getHeight() - 340);
-
-        batch.draw(dogtag, 445, stage.getHeight() - dogtag.getHeight() - 254);
-        game.mainFont.draw(batch, dogtags.toString(), 575, stage.getHeight() - dogtag.getHeight() - 200);
-
-        batch.draw(rankIcon, 500, stage.getHeight() - 503);
-        game.mainFont.draw(batch, "Ваш рейтинг: " + rating, 100, stage.getHeight() - 400);
-        game.mainFont.draw(batch, rankName, 100, stage.getHeight() - 450);
-
-        game.mainFont.draw(batch, "Рубашка карт", stage.getWidth() - 600, stage.getHeight() - 100);
-        game.mainFont.draw(batch, "Игровое поле", stage.getWidth() - 600, stage.getHeight() - 455);
-        game.mainFont.draw(batch, "Аватар", stage.getWidth() - 550, stage.getHeight() - 820);
-
-        game.mainFont.draw(batch, "Колоды", 235, stage.getHeight() - 550);
-
         batch.end();
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
@@ -376,12 +424,7 @@ public class ProfileScreen implements Screen {
 
     @Override
     public void dispose() {
-        background.dispose();
-        profilePicture.dispose();
-        experienceBar.dispose();
-        experienceProgress.dispose();
-        dogtag.dispose();
-        rankIcon.dispose();
+        stage.dispose();
     }
 
     public void fillRanks() {

@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -17,7 +18,7 @@ public class GameScreen implements Screen {
     final OrthographicCamera camera;
     final Batch batch;
     Stage stage;
-    Texture background;
+    Image background;
 
 
     TextField chat;
@@ -35,7 +36,9 @@ public class GameScreen implements Screen {
         camera = game.getCamera();
         batch = game.batch;
 
-        background = new Texture(Gdx.files.internal("MenuAssets/main_menu_bg.jpg"));
+        background = new Image(new Texture(Gdx.files.internal("MenuAssets/main_menu_bg.jpg")));
+        background.setPosition(0,0);
+        stage.addActor(background);
 
         chat = new TextField("TempLabel", game.getTextFieldStyle());
         chat.setPosition(100, 200);
@@ -67,6 +70,13 @@ public class GameScreen implements Screen {
                         + game.getCurrentGameID() + "," + chat.getText());
             }
         });
+
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
+        for (Actor actor:stage.getActors()) {
+            actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
+            actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
+        }
     }
 
     @Override
@@ -78,7 +88,6 @@ public class GameScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        batch.draw(background, 0, 0);
         batch.end();
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
@@ -94,7 +103,6 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
-        background.dispose();
         stage.dispose();
         game.setCurrentGameID(0);
     }

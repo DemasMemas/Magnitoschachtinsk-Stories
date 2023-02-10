@@ -19,7 +19,7 @@ public class MainMenuScreen implements Screen {
     final MainMgschst game;
     OrthographicCamera camera;
     final Batch batch;
-    Texture background;
+    Image background;
     Stage stage;
 
     TextButton createGameButton;
@@ -48,7 +48,6 @@ public class MainMenuScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        batch.draw(background, 0, 0);
         batch.end();
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
@@ -78,17 +77,29 @@ public class MainMenuScreen implements Screen {
         stage.getViewport().setCamera(camera);
         createStage();
         Gdx.input.setInputProcessor(stage);
-        stage.getViewport().setScreenBounds(0, 0, 1920, 1080);
+
+        if (!(stage.getWidth() == 0 || stage.getHeight() == 0)){
+            game.xScaler = stage.getWidth()/1920f;
+            game.yScaler = stage.getHeight()/1080f;
+        }
+
+        stage.getViewport().setScreenBounds(0, 0, (int) (1920 * game.xScaler), (int) (1080 * game.yScaler));
+
+        for (Actor actor:stage.getActors()) {
+            actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
+            actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
+        }
     }
 
     @Override
     public void dispose() {
-        background.dispose();
         stage.dispose();
     }
 
     public void createStage() {
-        background = new Texture(Gdx.files.internal("MenuAssets/main_menu_bg.jpg"));
+        background = new Image(new Texture(Gdx.files.internal("MenuAssets/main_menu_bg.jpg")));
+        background.setPosition(0,0);
+        stage.addActor(background);
 
         createGameButton = new TextButton("Создать игру", game.getTextButtonStyle());
         createGameButton.addListener(new ClickListener() {
