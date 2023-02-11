@@ -44,6 +44,9 @@ public class AuthorizationScreen implements Screen {
         camera = game.getCamera();
         batch = game.batch;
 
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
+
         background = new Image(new Texture(Gdx.files.internal("AuthorizationAssets/authorization_bg.jpg")));
         background.setPosition(0,0);
         stage.addActor(background);
@@ -66,7 +69,7 @@ public class AuthorizationScreen implements Screen {
         loginField = new TextField("", game.getTextFieldStyle());
         stage.addActor(loginField);
         loginField.setPosition(960 - 185, 1080 - 550);
-        loginField.setWidth(400f);
+        loginField.setWidth(400f * game.xScaler);
         loginField.setMessageText("Введите логин...");
         loginField.setMaxLength(16);
         loginField.setAlignment(Align.center);
@@ -76,7 +79,7 @@ public class AuthorizationScreen implements Screen {
         passwordField.setPasswordMode(true);
         passwordField.setPasswordCharacter('*');
         passwordField.setPosition(960 - 185, 1080 - 600);
-        passwordField.setWidth(400f);
+        passwordField.setWidth(400f * game.xScaler);
         passwordField.setMessageText("Введите пароль..");
         passwordField.setMaxLength(20);
         passwordField.setAlignment(Align.center);
@@ -147,8 +150,6 @@ public class AuthorizationScreen implements Screen {
         mainLabel.setAlignment(Align.center);
         stage.addActor(mainLabel);
 
-        game.xScaler = stage.getWidth()/1920f;
-        game.yScaler = stage.getHeight()/1080f;
         for (Actor actor:stage.getActors()) {
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
             actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);

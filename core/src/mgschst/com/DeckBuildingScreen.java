@@ -129,44 +129,44 @@ public class DeckBuildingScreen implements Screen {
 
         objectiveCountLabel = new Label("Целей в колоде:\n" + objectiveAmount + "/7", game.getMainLabelStyle());
         objectiveCountLabel.setPosition(1600, 730);
-        objectiveCountLabel.setWidth(300);
+        objectiveCountLabel.setWidth(300 * game.xScaler);
         objectiveCountLabel.setAlignment(Align.center);
         objectiveCountLabel.setWrap(true);
         stage.addActor(objectiveCountLabel);
         rareCardsCountLabel = new Label("Редких карт:\n" + rareCardsAmount + "/15", game.getMainLabelStyle());
         rareCardsCountLabel.setPosition(1600, 275);
-        rareCardsCountLabel.setWidth(300);
+        rareCardsCountLabel.setWidth(300 * game.xScaler);
         rareCardsCountLabel.setAlignment(Align.center);
         rareCardsCountLabel.setWrap(true);
         stage.addActor(rareCardsCountLabel);
         superRareCardsCountLabel = new Label("Очень редких карт: " + superRareCardsAmount + "/5", game.getMainLabelStyle());
         superRareCardsCountLabel.setPosition(1600, 155);
-        superRareCardsCountLabel.setWidth(300);
+        superRareCardsCountLabel.setWidth(300 * game.xScaler);
         superRareCardsCountLabel.setAlignment(Align.center);
         superRareCardsCountLabel.setWrap(true);
         stage.addActor(superRareCardsCountLabel);
         peopleCardsCountLabel = new Label("Карт людей: 5/" + peopleCardAmount + "/10", game.getMainLabelStyle());
         peopleCardsCountLabel.setPosition(1600, 610);
-        peopleCardsCountLabel.setWidth(300);
+        peopleCardsCountLabel.setWidth(300 * game.xScaler);
         peopleCardsCountLabel.setAlignment(Align.center);
         peopleCardsCountLabel.setWrap(true);
         stage.addActor(peopleCardsCountLabel);
         buildingsCardsCountLabel = new Label("Карт построек: 3/" + buildingCardAmount + "/10", game.getMainLabelStyle());
         buildingsCardsCountLabel.setPosition(1600, 455);
-        buildingsCardsCountLabel.setWidth(300);
+        buildingsCardsCountLabel.setWidth(300 * game.xScaler);
         buildingsCardsCountLabel.setAlignment(Align.center);
         buildingsCardsCountLabel.setWrap(true);
         stage.addActor(buildingsCardsCountLabel);
         deckSizeCountLabel = new Label("Карт в колоде:\n" + deckSize + "/50", game.getMainLabelStyle());
         deckSizeCountLabel.setPosition(1600, 900);
-        deckSizeCountLabel.setWidth(300);
+        deckSizeCountLabel.setWidth(300 * game.xScaler);
         deckSizeCountLabel.setAlignment(Align.center);
         deckSizeCountLabel.setWrap(true);
         stage.addActor(deckSizeCountLabel);
 
         deckNameField.setMessageText("Введите имя колоды");
         deckNameField.setMaxLength(16);
-        deckNameField.setWidth(600f);
+        deckNameField.setWidth(600f * game.xScaler);
         deckNameField.setPosition(330, 1080 - 70);
         stage.addActor(deckNameField);
 
@@ -185,7 +185,7 @@ public class DeckBuildingScreen implements Screen {
         stage.addActor(exitButton);
 
         saveButton = new TextButton("Сохранить", game.getTextButtonStyle());
-        saveButton.setPosition(1920 - saveButton.getWidth() - 50, 1080 - 1060);
+        saveButton.setPosition(1920 - 300, 1080 - 1060);
         saveButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -235,8 +235,7 @@ public class DeckBuildingScreen implements Screen {
         cardContainerTable = new Table();
         cardContainerTable.add(cardPane).width(1700 * game.xScaler).height(900 * game.yScaler);
         stage.addActor(cardContainerTable);
-        cardContainerTable.setPosition(0, 100);
-        cardContainerTable.setSize(1700, 900);
+        cardContainerTable.setPosition(785, 550);
 
         for (Actor actor:stage.getActors()) {
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
