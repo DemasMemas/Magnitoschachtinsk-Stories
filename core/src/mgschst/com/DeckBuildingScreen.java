@@ -378,7 +378,7 @@ public class DeckBuildingScreen implements Screen {
 
         Label cardDesc = new Label(currentCard.description, game.getMainLabelStyle());
         cardDesc.setPosition(475, 650);
-        cardDesc.setWidth(1000);
+        cardDesc.setWidth(1000 * game.xScaler);
         cardDesc.setWrap(true);
         cardDesc.setAlignment(Align.center);
         cardStage.addActor(cardDesc);
@@ -393,7 +393,7 @@ public class DeckBuildingScreen implements Screen {
             case "any" -> cardPrice.setText("Любая поддержка:  " + currentCard.price);
         }
         cardPrice.setPosition(50, 950);
-        cardPrice.setWidth(400);
+        cardPrice.setWidth(400 * game.xScaler);
         cardPrice.setWrap(true);
         cardPrice.setAlignment(Align.center);
         cardStage.addActor(cardPrice);
