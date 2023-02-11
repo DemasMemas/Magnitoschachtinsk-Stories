@@ -86,8 +86,8 @@ public class ProfileScreen implements Screen {
 
         fillConditions();
 
-        game.xScaler = stage.getWidth()/1920f;
-        game.yScaler = stage.getHeight()/1080f;
+        game.xScaler = 1920/1920f;
+        game.yScaler = 1080/1080f;
 
         try {
             PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM users WHERE nickname = ?");
@@ -132,14 +132,14 @@ public class ProfileScreen implements Screen {
         background = new Image(new Texture(Gdx.files.internal("ProfileAssets/profile_bg.jpg")));
         background.setPosition(0,0);
         experienceBar = new Image(new Texture(Gdx.files.internal("Images/experience_bar.png")));
-        experienceBar.setPosition(100, stage.getHeight() - experienceBar.getHeight() - 300);
+        experienceBar.setPosition(100, 1080 - experienceBar.getHeight() - 300);
         experienceProgress = new Image(new Texture(Gdx.files.internal("Images/experience_progress.png")));
-        experienceProgress.setPosition(103, stage.getHeight() - experienceProgress.getHeight() - 303);
-        experienceProgress.setBounds(103, stage.getHeight() - experienceProgress.getHeight() - 303, experienceProgress.getWidth() * ((float) experience / (level * 25)), experienceProgress.getHeight());
+        experienceProgress.setPosition(103, 1080 - experienceProgress.getHeight() - 303);
+        experienceProgress.setBounds(103, 1080 - experienceProgress.getHeight() - 303, experienceProgress.getWidth() * ((float) experience / (level * 25)), experienceProgress.getHeight());
         dogtag = new Image(new Texture(Gdx.files.internal("Images/dogtag.png")));
-        dogtag.setPosition(445, stage.getHeight() - dogtag.getHeight() - 254);
-        profilePicture.setPosition(100, stage.getHeight() - 228);
-        rankIcon.setPosition(500, stage.getHeight() - 503);
+        dogtag.setPosition(445, 1080 - dogtag.getHeight() - 254);
+        profilePicture.setPosition(100, 1080 - 228);
+        rankIcon.setPosition(500, 1080 - 503);
 
         stage.addActor(background);
         stage.addActor(experienceBar);
@@ -150,7 +150,7 @@ public class ProfileScreen implements Screen {
 
         exitButton = new TextButton("Выйти", game.getTextButtonStyle());
         stage.addActor(exitButton);
-        exitButton.setPosition(stage.getWidth() / 2, stage.getHeight() - 550);
+        exitButton.setPosition(1920 / 2, 1080 - 550);
 
         exitButton.addListener(new ChangeListener() {
             @Override
@@ -168,7 +168,7 @@ public class ProfileScreen implements Screen {
         cardContainerTable.add(cardPane).width(600f * game.xScaler).height(310f * game.yScaler);
         cardContainerTable.row();
         stage.addActor(cardContainerTable);
-        cardContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 300);
+        cardContainerTable.setPosition(1920 - 450, 1080 - 300);
 
         boardTable = new Table();
         fillBoards();
@@ -179,7 +179,7 @@ public class ProfileScreen implements Screen {
         boardContainerTable.add(boardPane).width(600f * game.xScaler).height(330f * game.yScaler);
         boardContainerTable.row();
         stage.addActor(boardContainerTable);
-        boardContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 655);
+        boardContainerTable.setPosition(1920 - 450, 1080 - 655);
 
         avaTable = new Table();
         fillAvas();
@@ -190,7 +190,7 @@ public class ProfileScreen implements Screen {
         avaContainerTable.add(avaPane).width(600f * game.xScaler).height(160f * game.yScaler);
         avaContainerTable.row();
         stage.addActor(avaContainerTable);
-        avaContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 940);
+        avaContainerTable.setPosition(1920 - 450, 1080 - 940);
 
         deckTable = new Table();
         fillDecks();
@@ -201,7 +201,7 @@ public class ProfileScreen implements Screen {
         deckContainerTable.add(deckPane).width(700f * game.xScaler).height(400f * game.yScaler);
         deckContainerTable.row();
         stage.addActor(deckContainerTable);
-        deckContainerTable.setPosition(350, stage.getHeight() - 660);
+        deckContainerTable.setPosition(350, 1080 - 660);
 
         cardBox = new Image(new Texture(Gdx.files.internal("ProfileAssets/cardbox.png")));
         cardBox.addListener(new ClickListener() {
@@ -332,59 +332,59 @@ public class ProfileScreen implements Screen {
                 dialog.show(stage);
             }
         });
-        cardBox.setPosition(stage.getWidth() / 2 - 200, stage.getHeight() - 900);
+        cardBox.setPosition(1920 / 2 - 200, 1080 - 900);
         stage.addActor(cardBox);
 
         Label tempLabel = new Label("Имя", game.getMainLabelStyle());
-        tempLabel.setPosition(278, stage.getHeight() - 158);
+        tempLabel.setPosition(278, 1080 - 158);
         stage.addActor(tempLabel);
 
         tempLabel = new Label(nickname, game.getMainLabelStyle());
-        tempLabel.setPosition(278, stage.getHeight() - 208);
+        tempLabel.setPosition(278, 1080 - 208);
         stage.addActor(tempLabel);
 
         tempLabel = new Label("Уровень", game.getMainLabelStyle());
-        tempLabel.setPosition(100, stage.getHeight() - 283);
+        tempLabel.setPosition(100, 1080 - 283);
         stage.addActor(tempLabel);
 
         tempLabel = new Label(level.toString(), game.getMainLabelStyle());
-        tempLabel.setPosition(300, stage.getHeight() - 283);
+        tempLabel.setPosition(300, 1080 - 283);
         stage.addActor(tempLabel);
 
         tempLabel = new Label(experience.toString(), game.getMainLabelStyle());
-        tempLabel.setPosition(100, stage.getHeight() - 365);
+        tempLabel.setPosition(100, 1080 - 365);
         stage.addActor(tempLabel);
 
         tempLabel = new Label(String.valueOf(level * 25), game.getMainLabelStyle());
-        tempLabel.setPosition(350, stage.getHeight() - 365);
+        tempLabel.setPosition(350, 1080 - 365);
         stage.addActor(tempLabel);
 
         tempLabel = new Label(dogtags.toString(), game.getMainLabelStyle());
-        tempLabel.setPosition(575, stage.getHeight() - dogtag.getHeight() - 225);
+        tempLabel.setPosition(575, 1080 - dogtag.getHeight() - 225);
         stage.addActor(tempLabel);
 
         tempLabel = new Label("Ваш рейтинг: " + rating, game.getMainLabelStyle());
-        tempLabel.setPosition(100, stage.getHeight() - 425);
+        tempLabel.setPosition(100, 1080 - 425);
         stage.addActor(tempLabel);
 
         tempLabel = new Label(rankName, game.getMainLabelStyle());
-        tempLabel.setPosition(100, stage.getHeight() - 475);
+        tempLabel.setPosition(100, 1080 - 475);
         stage.addActor(tempLabel);
 
         tempLabel = new Label("Рубашка карт", game.getMainLabelStyle());
-        tempLabel.setPosition(stage.getWidth() - 600, stage.getHeight() - 125);
+        tempLabel.setPosition(1920 - 600, 1080 - 125);
         stage.addActor(tempLabel);
 
         tempLabel = new Label("Игровое поле", game.getMainLabelStyle());
-        tempLabel.setPosition(stage.getWidth() - 600, stage.getHeight() - 480);
+        tempLabel.setPosition(1920 - 600, 1080 - 480);
         stage.addActor(tempLabel);
 
         tempLabel = new Label("Аватар", game.getMainLabelStyle());
-        tempLabel.setPosition(stage.getWidth() - 550, stage.getHeight() - 845);
+        tempLabel.setPosition(1920 - 550, 1080 - 845);
         stage.addActor(tempLabel);
 
         tempLabel = new Label("Колоды", game.getMainLabelStyle());
-        tempLabel.setPosition(235, stage.getHeight() - 575);
+        tempLabel.setPosition(235, 1080 - 575);
         stage.addActor(tempLabel);
 
         for (Actor actor:stage.getActors()) {
