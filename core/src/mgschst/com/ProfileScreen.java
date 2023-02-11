@@ -390,16 +390,10 @@ public class ProfileScreen implements Screen {
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
             actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
             if (actor.getClass().equals(Table.class)){
-                for (Cell cell:((Table) actor).getCells()) {
-                    Actor tempActor = cell.getActor();
-                    if (tempActor.getClass().equals(Image.class)){
-                        tempActor.setWidth(actor.getWidth() * game.xScaler);
-                        tempActor.setHeight(actor.getHeight() * game.yScaler);
-                    }
-                }
+                actor.setWidth(actor.getWidth() * game.xScaler);
+                actor.setHeight(actor.getHeight() * game.yScaler);
             }
         }
-
     }
 
     @Override
