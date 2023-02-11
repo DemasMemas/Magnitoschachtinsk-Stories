@@ -46,38 +46,32 @@ public class MainMgschst extends Game {
         camera.setToOrtho(false);
         batch = new SpriteBatch();
 
+        String charactersFont = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789][_!$%#@|\\/?-+=()*&.;:,{}\"´`'<>";
+
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.characters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789][_!$%#@|\\/?-+=()*&.;:,{}\"´`'<>";
+        parameter.characters = charactersFont;
         parameter.size = 40;
         parameter.borderWidth = 5;
         mainFont = generator.generateFont(parameter);
-        generator.dispose();
 
-        generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
         parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.characters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789][_!$%#@|\\/?-+=()*&.;:,{}\"´`'<>";
+        parameter.characters = charactersFont;
         parameter.size = 16;
         parameter.borderWidth = 2;
         parameter.color = new Color(0, 1, 0, 1);
         chosenFont = generator.generateFont(parameter);
-        generator.dispose();
 
-        generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
         parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.characters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789][_!$%#@|\\/?-+=()*&.;:,{}\"´`'<>";
+        parameter.characters = charactersFont;
         parameter.size = 14;
         parameter.borderWidth = 2;
-        parameter.color = new Color(1, 1, 1, 1);
         smallFont = generator.generateFont(parameter);
-        generator.dispose();
 
-        generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
         parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.characters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789][_!$%#@|\\/?-+=()*&.;:,{}\"´`'<>";
+        parameter.characters = charactersFont;
         parameter.size = 24;
         parameter.borderWidth = 2;
-        parameter.color = new Color(1, 1, 1, 1);
         normalFont = generator.generateFont(parameter);
         generator.dispose();
 
@@ -113,7 +107,72 @@ public class MainMgschst extends Game {
 
         playMenuMusic();
 
-        this.setScreen(new AuthorizationScreen(this));
+        AuthorizationScreen auS = new AuthorizationScreen(this);
+
+
+        if (xScaler != 1 || yScaler != 1){
+            float fontScaler = (xScaler * yScaler) / 2;
+            generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (40 * fontScaler);
+            parameter.borderWidth = 5;
+            mainFont = generator.generateFont(parameter);
+
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (16 * fontScaler);
+            parameter.borderWidth = 2;
+            parameter.color = new Color(0, 1, 0, 1);
+            chosenFont = generator.generateFont(parameter);
+
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (14 * fontScaler);
+            parameter.borderWidth = 2;
+            smallFont = generator.generateFont(parameter);
+
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (24 * fontScaler);
+            parameter.borderWidth = 2;
+            normalFont = generator.generateFont(parameter);
+            generator.dispose();
+
+            textButtonStyle = new TextButton.TextButtonStyle();
+            textButtonStyle.font = mainFont;
+
+            textFieldStyle = new TextField.TextFieldStyle();
+            textFieldStyle.font = mainFont;
+            textFieldStyle.fontColor = mainFont.getColor();
+
+            chosenLabelStyle = new Label.LabelStyle();
+            chosenLabelStyle.font = chosenFont;
+            chosenLabelStyle.fontColor = chosenFont.getColor();
+
+            smallLabelStyle = new Label.LabelStyle();
+            smallLabelStyle.font = smallFont;
+            smallLabelStyle.fontColor = smallFont.getColor();
+
+            normalLabelStyle = new Label.LabelStyle();
+            normalLabelStyle.font = normalFont;
+            normalLabelStyle.fontColor = normalFont.getColor();
+
+            mainLabelStyle = new Label.LabelStyle();
+            mainLabelStyle.font = mainFont;
+            mainLabelStyle.fontColor = chosenFont.getColor();
+
+            chosenMainLabelStyle = new Label.LabelStyle();
+            chosenMainLabelStyle.font = mainFont;
+            chosenMainLabelStyle.fontColor = new Color(0, 1, 0, 1);
+
+            dialogWindowStyle = new Window.WindowStyle();
+            dialogWindowStyle.titleFont = mainFont;
+
+            auS = new AuthorizationScreen(this);
+        }
+
+        this.setScreen(auS);
     }
 
     @Override
