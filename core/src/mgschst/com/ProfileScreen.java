@@ -86,6 +86,9 @@ public class ProfileScreen implements Screen {
 
         fillConditions();
 
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
+
         try {
             PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM users WHERE nickname = ?");
             preparedStatement.setString(1, game.getCurrentUserName());
@@ -384,15 +387,9 @@ public class ProfileScreen implements Screen {
         tempLabel.setPosition(235, stage.getHeight() - 575);
         stage.addActor(tempLabel);
 
-        game.xScaler = stage.getWidth()/1920f;
-        game.yScaler = stage.getHeight()/1080f;
         for (Actor actor:stage.getActors()) {
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
             actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
-            if (actor.getClass().equals(Table.class)){
-                actor.setWidth(actor.getWidth() * game.xScaler);
-                actor.setHeight(actor.getHeight() * game.yScaler);
-            }
         }
     }
 
@@ -448,6 +445,7 @@ public class ProfileScreen implements Screen {
         for (int i = 0; i < cardStyleAmount; i++) {
             final Image tempImage = new Image(new Texture(Gdx.files.internal("UserInfo/Cards/card_" + i + ".png")));
             tempImage.setName("card_" + i + ".png");
+            tempImage.scaleBy(game.xScaler - 1, game.yScaler - 1);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -470,6 +468,7 @@ public class ProfileScreen implements Screen {
         for (int i = 0; i < boardStyleAmount; i++) {
             final Image tempImage = new Image(new Texture(Gdx.files.internal("UserInfo/Boards/BoardProfile/board_" + i + ".png")));
             tempImage.setName("board_" + i + ".png");
+            tempImage.scaleBy(game.xScaler - 1, game.yScaler - 1);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -492,6 +491,7 @@ public class ProfileScreen implements Screen {
         for (int i = 0; i < avaStyleAmount; i++) {
             final Image tempImage = new Image(new Texture(Gdx.files.internal("UserInfo/Avatars/ava_" + i + ".png")));
             tempImage.setName("ava_" + i + ".png");
+            tempImage.scaleBy(game.xScaler - 1, game.yScaler - 1);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -541,6 +541,7 @@ public class ProfileScreen implements Screen {
                 deckTable.add(tempLabel);
 
                 final Image editTempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/edit.png")));
+                editTempImage.scaleBy(game.xScaler - 1, game.yScaler - 1);
                 editTempImage.setName(resultSet.getString("name") + " " + resultSet.getInt(1));
                 // открыть экран редактирования с id выбранной колоды
                 editTempImage.addListener(new ClickListener() {
@@ -553,7 +554,7 @@ public class ProfileScreen implements Screen {
 
                 final Image deleteTempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/delete.png")));
                 deleteTempImage.setName(resultSet.getString("name") + " " + resultSet.getInt(1));
-
+                deleteTempImage.scaleBy(game.xScaler - 1, game.yScaler - 1);
                 deleteTempImage.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
@@ -633,6 +634,7 @@ public class ProfileScreen implements Screen {
             });
             deckTable.add(tempLabel);
             Image tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/left_plus.png")));
+            tempImage.scaleBy(game.xScaler - 1, game.yScaler - 1);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y)
@@ -640,6 +642,7 @@ public class ProfileScreen implements Screen {
             });
             deckTable.add(tempImage);
             tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/right_plus.png")));
+            tempImage.scaleBy(game.xScaler - 1, game.yScaler - 1);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
