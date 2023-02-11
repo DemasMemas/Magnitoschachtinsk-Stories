@@ -111,7 +111,7 @@ public class MainMgschst extends Game {
 
 
         if (xScaler != 1 || yScaler != 1){
-            float fontScaler = (xScaler * yScaler) / 2;
+            float fontScaler = (xScaler + yScaler) / 2;
             generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
             parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
             parameter.characters = charactersFont;
