@@ -165,7 +165,7 @@ public class ProfileScreen implements Screen {
         cardPane.setOverscroll(true, false);
         cardPane.setScrollingDisabled(false, true);
         cardContainerTable = new Table();
-        cardContainerTable.add(cardPane).width(600f).height(310f);
+        cardContainerTable.add(cardPane).width(600f * game.xScaler).height(310f * game.yScaler);
         cardContainerTable.row();
         stage.addActor(cardContainerTable);
         cardContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 300);
@@ -176,7 +176,7 @@ public class ProfileScreen implements Screen {
         boardPane.setOverscroll(true, false);
         boardPane.setScrollingDisabled(false, true);
         boardContainerTable = new Table();
-        boardContainerTable.add(boardPane).width(600f).height(330f);
+        boardContainerTable.add(boardPane).width(600f * game.xScaler).height(330f * game.yScaler);
         boardContainerTable.row();
         stage.addActor(boardContainerTable);
         boardContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 655);
@@ -187,7 +187,7 @@ public class ProfileScreen implements Screen {
         avaPane.setOverscroll(true, false);
         avaPane.setScrollingDisabled(false, true);
         avaContainerTable = new Table();
-        avaContainerTable.add(avaPane).width(600f).height(160f);
+        avaContainerTable.add(avaPane).width(600f * game.xScaler).height(160f * game.yScaler);
         avaContainerTable.row();
         stage.addActor(avaContainerTable);
         avaContainerTable.setPosition(stage.getWidth() - 450, stage.getHeight() - 940);
@@ -198,7 +198,7 @@ public class ProfileScreen implements Screen {
         deckPane.setOverscroll(false, true);
         deckPane.setScrollingDisabled(true, false);
         deckContainerTable = new Table();
-        deckContainerTable.add(deckPane).width(700f).height(400f);
+        deckContainerTable.add(deckPane).width(700f * game.xScaler).height(400f * game.yScaler);
         deckContainerTable.row();
         stage.addActor(deckContainerTable);
         deckContainerTable.setPosition(350, stage.getHeight() - 660);
