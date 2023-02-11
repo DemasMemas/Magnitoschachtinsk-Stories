@@ -165,7 +165,7 @@ public class ProfileScreen implements Screen {
         cardPane.setOverscroll(true, false);
         cardPane.setScrollingDisabled(false, true);
         cardContainerTable = new Table();
-        cardContainerTable.add(cardPane).width(600f).height(310f);
+        cardContainerTable.add(cardPane).width(600f * game.xScaler).height(310f * game.yScaler);
         cardContainerTable.row();
         stage.addActor(cardContainerTable);
         cardContainerTable.setPosition(1920 - 450, 1080 - 300);
@@ -176,7 +176,7 @@ public class ProfileScreen implements Screen {
         boardPane.setOverscroll(true, false);
         boardPane.setScrollingDisabled(false, true);
         boardContainerTable = new Table();
-        boardContainerTable.add(boardPane).width(600f).height(330f);
+        boardContainerTable.add(boardPane).width(600f * game.xScaler).height(330f * game.yScaler);
         boardContainerTable.row();
         stage.addActor(boardContainerTable);
         boardContainerTable.setPosition(1920 - 450, 1080 - 655);
@@ -187,7 +187,7 @@ public class ProfileScreen implements Screen {
         avaPane.setOverscroll(true, false);
         avaPane.setScrollingDisabled(false, true);
         avaContainerTable = new Table();
-        avaContainerTable.add(avaPane).width(600f).height(160f);
+        avaContainerTable.add(avaPane).width(600f * game.xScaler).height(160f * game.yScaler);
         avaContainerTable.row();
         stage.addActor(avaContainerTable);
         avaContainerTable.setPosition(1920 - 450, 1080 - 940);
@@ -198,7 +198,7 @@ public class ProfileScreen implements Screen {
         deckPane.setOverscroll(false, true);
         deckPane.setScrollingDisabled(true, false);
         deckContainerTable = new Table();
-        deckContainerTable.add(deckPane).width(700f).height(400f);
+        deckContainerTable.add(deckPane).width(700f * game.xScaler).height(400f * game.yScaler);
         deckContainerTable.row();
         stage.addActor(deckContainerTable);
         deckContainerTable.setPosition(350, 1080 - 660);
@@ -328,7 +328,7 @@ public class ProfileScreen implements Screen {
                 dialog.getButtonTable().add(noButton);
 
                 dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
-
+                dialog.scaleBy(game.xScaler - 1, game.yScaler - 1);
                 dialog.show(stage);
             }
         });
@@ -445,6 +445,7 @@ public class ProfileScreen implements Screen {
         for (int i = 0; i < cardStyleAmount; i++) {
             final Image tempImage = new Image(new Texture(Gdx.files.internal("UserInfo/Cards/card_" + i + ".png")));
             tempImage.setName("card_" + i + ".png");
+            tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -467,6 +468,7 @@ public class ProfileScreen implements Screen {
         for (int i = 0; i < boardStyleAmount; i++) {
             final Image tempImage = new Image(new Texture(Gdx.files.internal("UserInfo/Boards/BoardProfile/board_" + i + ".png")));
             tempImage.setName("board_" + i + ".png");
+            tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -489,6 +491,7 @@ public class ProfileScreen implements Screen {
         for (int i = 0; i < avaStyleAmount; i++) {
             final Image tempImage = new Image(new Texture(Gdx.files.internal("UserInfo/Avatars/ava_" + i + ".png")));
             tempImage.setName("ava_" + i + ".png");
+            tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -539,6 +542,7 @@ public class ProfileScreen implements Screen {
 
                 final Image editTempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/edit.png")));
                 editTempImage.setName(resultSet.getString("name") + " " + resultSet.getInt(1));
+                editTempImage.setSize(editTempImage.getWidth() * game.xScaler, editTempImage.getHeight() * game.yScaler);
                 // открыть экран редактирования с id выбранной колоды
                 editTempImage.addListener(new ClickListener() {
                     @Override
@@ -550,6 +554,7 @@ public class ProfileScreen implements Screen {
 
                 final Image deleteTempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/delete.png")));
                 deleteTempImage.setName(resultSet.getString("name") + " " + resultSet.getInt(1));
+                deleteTempImage.setSize(deleteTempImage.getWidth() * game.xScaler, deleteTempImage.getHeight() * game.yScaler);
                 deleteTempImage.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
@@ -609,7 +614,7 @@ public class ProfileScreen implements Screen {
                         dialog.getButtonTable().add(noButton);
 
                         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
-
+                        dialog.scaleBy(game.xScaler - 1, game.yScaler - 1);
                         dialog.show(stage);
                     }
                 });
@@ -629,6 +634,7 @@ public class ProfileScreen implements Screen {
             });
             deckTable.add(tempLabel);
             Image tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/left_plus.png")));
+            tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y)
@@ -636,6 +642,7 @@ public class ProfileScreen implements Screen {
             });
             deckTable.add(tempImage);
             tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/right_plus.png")));
+            tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
             tempImage.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -857,7 +864,7 @@ public class ProfileScreen implements Screen {
 
         dialog.getButtonTable().add(closeButton);
         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
-
+        dialog.scaleBy(game.xScaler - 1, game.yScaler - 1);
         dialog.show(stage);
     }
 
@@ -927,7 +934,6 @@ public class ProfileScreen implements Screen {
         final ArrayList<Integer> tempSoldCards = new ArrayList<>(soldCards);
 
         final Image[] crateImage = {new Image(new Texture(Gdx.files.internal("ProfileAssets/сlosedCrateNoLight.png")))};
-        crateImage[0].scaleBy(game.xScaler - 1, game.yScaler - 1);
         crateImage[0].addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -1010,6 +1016,7 @@ public class ProfileScreen implements Screen {
 
         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
 
+        dialog.scaleBy(game.xScaler - 1, game.yScaler - 1);
         dialog.show(stage);
     }
 
