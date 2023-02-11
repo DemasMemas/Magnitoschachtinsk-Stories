@@ -65,6 +65,9 @@ public class DeckBuildingScreen implements Screen {
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
 
+        game.xScaler = stage.getWidth()/1920f;
+        game.yScaler = stage.getHeight()/1080f;
+
         camera = game.getCamera();
         batch = game.batch;
 
@@ -164,15 +167,15 @@ public class DeckBuildingScreen implements Screen {
         deckNameField.setMessageText("Введите имя колоды");
         deckNameField.setMaxLength(16);
         deckNameField.setWidth(600f);
-        deckNameField.setPosition(330, stage.getHeight() - 70);
+        deckNameField.setPosition(330, 1080 - 70);
         stage.addActor(deckNameField);
 
         deckNameLabel = new Label("Имя колоды:", game.getMainLabelStyle());
-        deckNameLabel.setPosition(50, stage.getHeight() - 70);
+        deckNameLabel.setPosition(50, 1080 - 70);
         stage.addActor(deckNameLabel);
 
         exitButton = new TextButton("Выйти без сохранения", game.getTextButtonStyle());
-        exitButton.setPosition(50, stage.getHeight() - 1060);
+        exitButton.setPosition(50, 1080 - 1060);
         exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -181,9 +184,8 @@ public class DeckBuildingScreen implements Screen {
         });
         stage.addActor(exitButton);
 
-        // переписать принцип работы
         saveButton = new TextButton("Сохранить", game.getTextButtonStyle());
-        saveButton.setPosition(stage.getWidth() - saveButton.getWidth() - 50, stage.getHeight() - 1060);
+        saveButton.setPosition(1920 - saveButton.getWidth() - 50, 1080 - 1060);
         saveButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -231,13 +233,11 @@ public class DeckBuildingScreen implements Screen {
         cardPane.setOverscroll(false, true);
         cardPane.setScrollingDisabled(true, false);
         cardContainerTable = new Table();
-        cardContainerTable.add(cardPane);
+        cardContainerTable.add(cardPane).width(1700 * game.xScaler).height(900 * game.yScaler);
         stage.addActor(cardContainerTable);
         cardContainerTable.setPosition(0, 100);
         cardContainerTable.setSize(1700, 900);
 
-        game.xScaler = stage.getWidth()/1920f;
-        game.yScaler = stage.getHeight()/1080f;
         for (Actor actor:stage.getActors()) {
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
             actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
@@ -297,6 +297,7 @@ public class DeckBuildingScreen implements Screen {
             while (j % 8 != 0) {
                 try {
                     final Image tempImage = new Image(new Texture(Gdx.files.internal("Cards/card_" + (j + (i * 7)) + ".png")));
+                    tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
                     tempImage.setName(j + (i * 7) + "");
                     int finalJ = j;
                     int finalI = i;
@@ -621,10 +622,12 @@ public class DeckBuildingScreen implements Screen {
         dialog.getButtonTable().add(closeButton);
         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
 
+        dialog.scaleBy(game.xScaler - 1, game.yScaler - 1);
         if (isCardStageActive) {
             dialog.show(cardStage);
         } else {
             dialog.show(stage);
         }
+
     }
 }
