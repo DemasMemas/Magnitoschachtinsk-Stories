@@ -150,7 +150,7 @@ public class ProfileScreen implements Screen {
 
         exitButton = new TextButton("Выйти", game.getTextButtonStyle());
         stage.addActor(exitButton);
-        exitButton.setPosition(860, 1080 - 550);
+        exitButton.setPosition(960, 1080 - 550);
 
         exitButton.addListener(new ChangeListener() {
             @Override
@@ -465,6 +465,7 @@ public class ProfileScreen implements Screen {
     }
 
     public void fillBoards() {
+        // размер доски - 533 / 300
         for (int i = 0; i < boardStyleAmount; i++) {
             final Image tempImage = new Image(new Texture(Gdx.files.internal("UserInfo/Boards/BoardProfile/board_" + i + ".png")));
             tempImage.setName("board_" + i + ".png");
@@ -881,10 +882,9 @@ public class ProfileScreen implements Screen {
                     cardResultSet.getString("type"),
                     cardResultSet.getString("description"),
                     cardResultSet.getInt("deck_limit"),
-                    cardResultSet.getString("statuses"),
                     cardResultSet.getString("cost_type"),
                     cardResultSet.getInt("health_status"),
-                    cardResultSet.getInt("effect_number"),
+                    cardResultSet.getString("effects"),
                     cardResultSet.getInt("price"),
                     cardResultSet.getInt("rareness"),
                     cardResultSet.getInt("attack"),
@@ -908,10 +908,9 @@ public class ProfileScreen implements Screen {
                     cardResultSet.getString("type"),
                     cardResultSet.getString("description"),
                     cardResultSet.getInt("deck_limit"),
-                    cardResultSet.getString("statuses"),
                     cardResultSet.getString("cost_type"),
                     cardResultSet.getInt("health_status"),
-                    cardResultSet.getInt("effect_number"),
+                    cardResultSet.getString("effects"),
                     cardResultSet.getInt("price"),
                     cardResultSet.getInt("rareness"),
                     cardResultSet.getInt("attack"),

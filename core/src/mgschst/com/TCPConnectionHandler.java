@@ -12,7 +12,7 @@ public class TCPConnectionHandler implements TCPConnectionListener {
 
     public TCPConnectionHandler(final MainMgschst game) {
         this.game = game;
-        conn = game.getPlayerConnection();
+        conn = this.game.getPlayerConnection();
     }
 
     @Override
@@ -30,7 +30,7 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                     if (commandList.get(2).split(":")[0].equals("Game created with ID"))
                         game.setCurrentGameID(Integer.parseInt(commandList.get(2).split(":")[1].trim()));
                     GameScreen currentScreen = (GameScreen) game.getScreen();
-                    currentScreen.changeLabel(commandList.get(1) + ": " + commandList.get(2));
+                    currentScreen.changeLabel(commandList.get(1) + ": " + commandList.get(2).replace("```", ","));
                 }
                 case "games" -> {
                     commandList.remove(0);
@@ -44,6 +44,22 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                 case "closeGame" -> {
                     GameScreen currentScreen = (GameScreen) game.getScreen();
                     currentScreen.openMenu();
+                }
+                case "startGame" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.startGame(commandList.get(1));
+                }
+                case "showFirstPlayer" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.showFirstPlayer(commandList.get(1));
+                }
+                case "changeTime" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.changeTimer(Integer.parseInt(commandList.get(1)));
+                }
+                case "takeTurn" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.takeTurn();
                 }
             }
         });

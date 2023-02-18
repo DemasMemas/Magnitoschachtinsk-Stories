@@ -167,7 +167,7 @@ public class DeckBuildingScreen implements Screen {
         deckNameField.setMessageText("Введите имя колоды");
         deckNameField.setMaxLength(16);
         deckNameField.setWidth(600f * game.xScaler);
-        deckNameField.setPosition(330, 1080 - 70);
+        deckNameField.setPosition(340, 1080 - 70);
         stage.addActor(deckNameField);
 
         deckNameLabel = new Label("Имя колоды:", game.getMainLabelStyle());
@@ -185,7 +185,7 @@ public class DeckBuildingScreen implements Screen {
         stage.addActor(exitButton);
 
         saveButton = new TextButton("Сохранить", game.getTextButtonStyle());
-        saveButton.setPosition(1920 - 300, 1080 - 1060);
+        saveButton.setPosition(1620, 20);
         saveButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -337,21 +337,20 @@ public class DeckBuildingScreen implements Screen {
             cardPreparedStatement.setInt(1, id);
             ResultSet cardResultSet = cardPreparedStatement.executeQuery();
             cardResultSet.next();
-            return new Card(cardResultSet.getInt(1),
-                    cardResultSet.getString(2),
-                    cardResultSet.getString(3),
-                    cardResultSet.getString(4),
-                    cardResultSet.getString(5),
-                    cardResultSet.getInt(6),
-                    cardResultSet.getString(7),
-                    cardResultSet.getString(8),
-                    cardResultSet.getInt(9),
-                    cardResultSet.getInt(10),
-                    cardResultSet.getInt(11),
-                    cardResultSet.getInt(12),
-                    cardResultSet.getInt(13),
-                    cardResultSet.getInt(14),
-                    cardResultSet.getInt(15));
+            return new Card(cardResultSet.getInt("card_id"),
+                    cardResultSet.getString("name"),
+                    cardResultSet.getString("image_path"),
+                    cardResultSet.getString("type"),
+                    cardResultSet.getString("description"),
+                    cardResultSet.getInt("deck_limit"),
+                    cardResultSet.getString("cost_type"),
+                    cardResultSet.getInt("health_status"),
+                    cardResultSet.getString("effects"),
+                    cardResultSet.getInt("price"),
+                    cardResultSet.getInt("rareness"),
+                    cardResultSet.getInt("attack"),
+                    cardResultSet.getInt("defence"),
+                    cardResultSet.getInt("stealth"));
         } catch (SQLException exception) {
             return null;
         }
@@ -580,10 +579,9 @@ public class DeckBuildingScreen implements Screen {
                     cardResultSet.getString("type"),
                     cardResultSet.getString("description"),
                     cardResultSet.getInt("deck_limit"),
-                    cardResultSet.getString("statuses"),
                     cardResultSet.getString("cost_type"),
                     cardResultSet.getInt("health_status"),
-                    cardResultSet.getInt("effect_number"),
+                    cardResultSet.getString("effects"),
                     cardResultSet.getInt("price"),
                     cardResultSet.getInt("rareness"),
                     cardResultSet.getInt("attack"),

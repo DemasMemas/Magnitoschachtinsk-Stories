@@ -246,7 +246,8 @@ public class MainMgschst extends Game {
     public void setCurrentGameID(int currentGameID) { this.currentGameID = currentGameID; }
 
     public void recreatePlayerConnection(){ try {
-        playerConnection = new TCPConnection(new TCPConnectionHandler(this), "192.168.67.241", 8080);
+        if (playerConnection == null)
+        playerConnection = new TCPConnection(new TCPConnectionHandler(this), "127.0.0.1", 8080);
     } catch (Exception e) {
         e.printStackTrace();
     }}
