@@ -12,6 +12,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import mgschst.com.connect.TCPConnection;
+import mgschst.com.connect.TCPConnectionHandler;
+import mgschst.com.screens.AuthorizationScreen;
 
 import java.util.Random;
 
@@ -256,6 +259,7 @@ public class MainMgschst extends Game {
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal
                 ("Music/menuMusic" + random.nextInt(7) + ".mp3"));
         menuMusic.play();
-        menuMusic.setVolume(0.15f);
+        //menuMusic.setVolume(0.15f);
+        menuMusic.setVolume(0f);
     }
 }
