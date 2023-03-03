@@ -2,6 +2,7 @@ package mgschst.com.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -26,6 +27,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class GameScreen implements Screen {
     final MainMgschst game;
@@ -39,10 +42,7 @@ public class GameScreen implements Screen {
     TextButton sendMessage;
     VerticalGroup chatGroup;
 
-    Label firstCardCounter;
-    Label secondCardCounter;
-    Label turnTimer;
-    Label turnLabel;
+    Label firstCardCounter, secondCardCounter, turnTimer, turnLabel;
     TextButton endTurnButton;
 
     TCPConnection playerConn;
@@ -61,6 +61,9 @@ public class GameScreen implements Screen {
     Stage cardStage = new Stage();
     Boolean isCardStageActive = false;
     HorizontalGroup firstPlayerField = new HorizontalGroup();
+
+    Label victoryPointsFirstPlayer, victoryPointsSecondPlayer;
+    VerticalGroup resourcesGroup = new VerticalGroup();
 
     public GameScreen(final MainMgschst game) {
         PreparedStatement preparedStatement;
@@ -249,6 +252,16 @@ public class GameScreen implements Screen {
         stage.addActor(firstName);
         firstPlayerHand.setPosition(565, 70);
         firstPlayerHand.space(-35f);
+
+        victoryPointsFirstPlayer = new Label("ПО: 0/5", game.getMainLabelStyle());
+        victoryPointsFirstPlayer.setColor(Color.GOLDENROD);
+        victoryPointsFirstPlayer.setPosition(1750, 50);
+        stage.addActor(victoryPointsFirstPlayer);
+
+        resourcesGroup.setPosition(1685, 500);
+        resourcesGroup.space(5f);
+        addNewResource(5);
+        stage.addActor(resourcesGroup);
     }
     public void secondPlayerInitialize(){
         // счетчик карт в колоде
@@ -282,6 +295,11 @@ public class GameScreen implements Screen {
         for (int i = 0; i < 7; i++)
             secondPlayerHand.addActor(new Image(new Texture(
                     Gdx.files.internal("UserInfo/Cards/GameCards/" + secondPlayer.cardPicturePath))));
+
+        victoryPointsSecondPlayer = new Label("ПО: 0/5", game.getMainLabelStyle());
+        victoryPointsSecondPlayer.setColor(Color.GOLDENROD);
+        victoryPointsSecondPlayer.setPosition(15, 900);
+        stage.addActor(victoryPointsSecondPlayer);
     }
 
     public void changeTimer(int time){
@@ -341,7 +359,7 @@ public class GameScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y){
                 // открыть описание карты
-                if (tempImage.getName().equals("")) fillCurrentCardStage(tempCard);
+                if (tempImage.getName().equals("")) fillCurrentCardStage(tempCard, tempImage);
             }
         });
         tempImage.addListener(new DragListener(){
@@ -367,10 +385,7 @@ public class GameScreen implements Screen {
                         tempImage.getX() + (tempImage.getWidth() / 2) > -205 * game.xScaler &&
                         tempImage.getY() + (tempImage.getHeight() / 2) > 125 * game.yScaler &&
                         tempImage.getY() + (tempImage.getHeight() / 2) < 395 * game.yScaler){
-                    firstPlayerHand.removeActor(tempImage);
-                    tempImage.getListeners().clear();
                     playCard(tempCard, tempImage);
-                    endTurn();
                     return;
                 }
 
@@ -412,7 +427,7 @@ public class GameScreen implements Screen {
         turnLabel.addAction(createAlphaAction());
     }
 
-    public void fillCurrentCardStage(Card currentCard) {
+    public void fillCurrentCardStage(Card currentCard, Image tempImage) {
         isCardStageActive = true;
         cardStage = new Stage();
         Gdx.input.setInputProcessor(cardStage);
@@ -470,6 +485,7 @@ public class GameScreen implements Screen {
                 isCardStageActive = false;
                 Gdx.input.setInputProcessor(stage);
                 cardStage.dispose();
+                playCard(currentCard, tempImage);
             }
         });
         cardStage.addActor(addButton);
@@ -481,7 +497,110 @@ public class GameScreen implements Screen {
     }
 
     public void playCard(Card tempCard, Image tempImage){
-        firstPlayerField.addActor(tempImage);
-        System.out.println(tempCard.toString());
+        if (!checkPrice(tempCard, tempImage))
+            return;
+        if (tempCard.type.equals("building") || tempCard.type.equals("people")){
+            // разместить карту на поле
+            firstPlayerField.addActor(tempImage);
+        }
+        // убрать карту из руки
+        firstPlayerHand.removeActor(tempImage);
+        tempImage.getListeners().clear();
+        endTurn();
+    }
+
+    public void addNewResource(int times){
+        Random random = new Random();
+        for (int i = 0; i < times; i++){
+            String type = "";
+            switch (random.nextInt(6)){
+                case 0, 5 -> type = "any";
+                case 1 -> type = "prapor";
+                case 2 -> type = "peacekeeper";
+                case 3 -> type = "therapist";
+                case 4 -> type = "mechanic";
+            }
+            Image tempImage = new Image(new Texture(Gdx.files.internal("DeckAssets/ResIco/" + type + ".png")));
+            tempImage.setName(type);
+            resourcesGroup.addActor(tempImage);
+        }
+    }
+
+    public boolean checkPrice(Card tempCard, Image tempImage) {
+        if (!tempCard.cost_type.equals("free")) {
+            int counter = 0;
+            if (tempCard.cost_type.equals("any"))
+                counter = resourcesGroup.getChildren().size;
+            else {
+                for (Actor tempActor : resourcesGroup.getChildren())
+                    if (tempActor.getName().equals(tempCard.cost_type) ||
+                            tempActor.getName().equals("any")) counter += 1;
+            }
+            if (counter >= tempCard.price) {
+                counter = tempCard.price;
+                ArrayList<Actor> deleteList = new ArrayList<>();
+                if (tempCard.cost_type.equals("any")) {
+                    for (Actor tempActor : resourcesGroup.getChildren().items) {
+                        if (counter == 0) break;
+                        try {
+                            if (!tempActor.getName().equals(tempCard.cost_type)) {
+                                counter -= 1;
+                                deleteList.add(tempActor);
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    for (Actor tempActor : deleteList)
+                        resourcesGroup.removeActor(tempActor, true);
+                    deleteList.clear();
+                    for (Actor tempActor : resourcesGroup.getChildren().items) {
+                        if (counter == 0) break;
+                        try {
+                            if (tempActor.getName().equals(tempCard.cost_type)) {
+                                counter -= 1;
+                                deleteList.add(tempActor);
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    for (Actor tempActor : deleteList)
+                        resourcesGroup.removeActor(tempActor, true);
+                } else {
+                    for (Actor tempActor : resourcesGroup.getChildren().items) {
+                        if (counter == 0) break;
+                        try {
+                            if (tempActor.getName().equals(tempCard.cost_type)) {
+                                counter -= 1;
+                                deleteList.add(tempActor);
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    for (Actor tempActor : deleteList)
+                        resourcesGroup.removeActor(tempActor, true);
+                    deleteList.clear();
+                    for (Actor tempActor : resourcesGroup.getChildren().items) {
+                        if (counter == 0) break;
+                        try {
+                            if (tempActor.getName().equals("any")) {
+                                counter -= 1;
+                                deleteList.add(tempActor);
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    for (Actor tempActor : deleteList)
+                        resourcesGroup.removeActor(tempActor, true);
+                }
+                deleteList.clear();
+            } else {
+                firstPlayerHand.removeActor(tempImage);
+                firstPlayerHand.addActor(tempImage);
+                useTurnLabel("Недостаточно поддержки");
+                return false;
+            }
+        }
+        return true;
     }
 }
+
