@@ -1,5 +1,7 @@
 package mgschst.com.dbObj;
 
+import mgschst.com.dbObj.People.Person;
+
 public class Card {
     public int card_id;
     public String name;
@@ -16,6 +18,7 @@ public class Card {
     public int defence;
     public int stealth;
     public int current_amount;
+    public Person person;
 
     public Card(int card_id, String name, String image_path, String type, String description,
                 int deck_limit, String cost_type, int health_status,

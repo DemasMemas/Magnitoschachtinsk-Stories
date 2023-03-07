@@ -17,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
+import mgschst.com.EffectHandler;
 import mgschst.com.MainMgschst;
 import mgschst.com.connect.DatabaseHandler;
 import mgschst.com.connect.TCPConnection;
@@ -28,6 +29,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 public class GameScreen implements Screen {
@@ -61,6 +63,8 @@ public class GameScreen implements Screen {
     Stage cardStage = new Stage();
     Boolean isCardStageActive = false;
     HorizontalGroup firstPlayerField = new HorizontalGroup();
+    HashMap<Integer, Card> firstPlayerActiveCards = new HashMap<>();
+    static int lastPlayedCardID = 0;
 
     Label victoryPointsFirstPlayer, victoryPointsSecondPlayer;
     VerticalGroup resourcesGroup = new VerticalGroup();
@@ -497,12 +501,11 @@ public class GameScreen implements Screen {
     }
 
     public void playCard(Card tempCard, Image tempImage){
-        if (!checkPrice(tempCard, tempImage))
-            return;
-        if (tempCard.type.equals("building") || tempCard.type.equals("people")){
-            // разместить карту на поле
-            firstPlayerField.addActor(tempImage);
-        }
+        if (!checkPrice(tempCard, tempImage)) return;
+        if (tempCard.effects != null)
+        for(String effect:tempCard.effects.split(","))
+            EffectHandler.handEffect(Integer.parseInt(effect), tempCard, game);
+
         // убрать карту из руки
         firstPlayerHand.removeActor(tempImage);
         tempImage.getListeners().clear();
@@ -601,6 +604,17 @@ public class GameScreen implements Screen {
             }
         }
         return true;
+    }
+
+    public void spawnPeople(Card card){
+        // разместить карту на поле
+        firstPlayerActiveCards.put(lastPlayedCardID, card);
+        Image tempImage = new Image(new Texture(
+                Gdx.files.internal("Cards/inGame/" + card.image_path)));
+        tempImage.setName(String.valueOf(lastPlayedCardID));
+        lastPlayedCardID++;
+        // добавить информацию о карте и дать ей возможность действовать
+        firstPlayerField.addActor(tempImage);
     }
 }
 
