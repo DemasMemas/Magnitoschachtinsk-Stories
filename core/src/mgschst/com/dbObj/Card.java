@@ -1,5 +1,6 @@
 package mgschst.com.dbObj;
 
+import mgschst.com.dbObj.Building.Building;
 import mgschst.com.dbObj.People.Person;
 
 public class Card {
@@ -19,6 +20,7 @@ public class Card {
     public int stealth;
     public int current_amount;
     public Person person;
+    public Building building;
 
     public Card(int card_id, String name, String image_path, String type, String description,
                 int deck_limit, String cost_type, int health_status,
@@ -63,5 +65,14 @@ public class Card {
     @Override
     public String toString(){
         return card_id + " " + name + " " + current_amount + "/" + deck_limit;
+    }
+
+    public String getPersonCard(){
+        return card_id + " " + person.getArmorString() + " " + person.getWeaponString();
+        //return card_id + " " + person.getArmorString() + " " + person.getHelmetString() + " " +
+        //        person.getWeaponString() + " " + person.firstEquipString() + " " + person.secondEquipString() + " ";
+    }
+    public String getBuildingCard(){
+        return String.valueOf(card_id);
     }
 }

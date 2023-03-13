@@ -43,17 +43,7 @@ public class MainMenuScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        game.setButtonPressed(false);
-        ScreenUtils.clear(0, 0, 0, 1);
-
-        camera.update();
-        batch.setProjectionMatrix(camera.combined);
-
-        batch.begin();
-        batch.end();
-
-        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-        stage.draw();
+        DeckBuildingScreen.renderScreen(game, camera, batch, stage);
     }
 
     @Override

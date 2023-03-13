@@ -68,6 +68,27 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                     GameScreen currentScreen = (GameScreen) game.getScreen();
                     currentScreen.takeCard(Integer.parseInt(commandList.get(1)));
                 }
+                case "enemyCard" -> {
+                    System.out.println(commandList);
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.placeEnemyCard(commandList.get(1), commandList.get(2));
+                }
+                case "enemyCardFromHand" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.dropCardFromEnemyHand();
+                }
+                case "enemyTakeCard" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.enemyTakeCard();
+                }
+                case "updateResources" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.updateResources();
+                }
+                case "checkRoundEndStatus" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.checkRoundEndStatus();
+                }
             }
         });
     }

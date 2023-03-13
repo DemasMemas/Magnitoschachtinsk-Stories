@@ -24,6 +24,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
+import static mgschst.com.EffectHandler.makeNewCard;
+
 public class DeckBuildingScreen implements Screen {
     final MainMgschst game;
     Integer deckID;
@@ -248,6 +250,20 @@ public class DeckBuildingScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        renderScreenWithCardStage(game, camera, batch, stage, isCardStageActive, cardStage);
+    }
+
+    static void renderScreenWithCardStage(MainMgschst game, OrthographicCamera camera, Batch batch, Stage stage,
+                                          Boolean isCardStageActive, Stage cardStage) {
+        renderScreen(game, camera, batch, stage);
+
+        if (isCardStageActive) {
+            cardStage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
+            cardStage.draw();
+        }
+    }
+
+    static void renderScreen(MainMgschst game, OrthographicCamera camera, Batch batch, Stage stage) {
         game.setButtonPressed(false);
         ScreenUtils.clear(0, 0, 0, 1);
 
@@ -259,11 +275,6 @@ public class DeckBuildingScreen implements Screen {
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
         stage.draw();
-
-        if (isCardStageActive) {
-            cardStage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-            cardStage.draw();
-        }
     }
 
     @Override
@@ -337,23 +348,7 @@ public class DeckBuildingScreen implements Screen {
         PreparedStatement cardPreparedStatement;
         try {
             cardPreparedStatement = conn.prepareStatement("SELECT * FROM cards WHERE card_id = ?");
-            cardPreparedStatement.setInt(1, id);
-            ResultSet cardResultSet = cardPreparedStatement.executeQuery();
-            cardResultSet.next();
-            return new Card(cardResultSet.getInt("card_id"),
-                    cardResultSet.getString("name"),
-                    cardResultSet.getString("image_path"),
-                    cardResultSet.getString("type"),
-                    cardResultSet.getString("description"),
-                    cardResultSet.getInt("deck_limit"),
-                    cardResultSet.getString("cost_type"),
-                    cardResultSet.getInt("health_status"),
-                    cardResultSet.getString("effects"),
-                    cardResultSet.getInt("price"),
-                    cardResultSet.getInt("rareness"),
-                    cardResultSet.getInt("attack"),
-                    cardResultSet.getInt("defence"),
-                    cardResultSet.getInt("stealth"));
+            return makeNewCard(id, cardPreparedStatement);
         } catch (SQLException exception) {
             return null;
         }
@@ -383,7 +378,6 @@ public class DeckBuildingScreen implements Screen {
         cardDesc.setWrap(true);
         cardDesc.setAlignment(Align.center);
         cardStage.addActor(cardDesc);
-
 
         Label cardPrice = new Label("", game.getMainLabelStyle());
         switch (currentCard.cost_type) {
@@ -431,16 +425,7 @@ public class DeckBuildingScreen implements Screen {
                     if (finalCurrentCard.type.equals("building")) buildingCardAmount++;
                     if (finalCurrentCard.type.equals("objective")) objectiveAmount++;
 
-                    objectiveCountLabel.setText("Целей в колоде:\n" + objectiveAmount + "/7");
-                    rareCardsCountLabel.setText("Редких карт:\n" + rareCardsAmount + "/15");
-                    superRareCardsCountLabel.setText("Очень редких карт: " + superRareCardsAmount + "/5");
-                    peopleCardsCountLabel.setText("Карт людей: 5/" + peopleCardAmount + "/10");
-                    buildingsCardsCountLabel.setText("Карт построек: 3/" + buildingCardAmount + "/10");
-                    deckSizeCountLabel.setText("Карт в колоде:\n" + deckSize + "/50");
-
-                    addButton.setText("Добавить " +
-                            deckCards.get(finalCurrentCard.card_id).current_amount +
-                            "/" + finalCurrentCard.current_amount);
+                    updateDeckLimits(addButton, finalCurrentCard);
                 }
             }
         });
@@ -462,16 +447,7 @@ public class DeckBuildingScreen implements Screen {
                     if (finalCurrentCard.type.equals("building")) buildingCardAmount--;
                     if (finalCurrentCard.type.equals("objective")) objectiveAmount--;
 
-                    objectiveCountLabel.setText("Целей в колоде:\n" + objectiveAmount + "/7");
-                    rareCardsCountLabel.setText("Редких карт:\n" + rareCardsAmount + "/15");
-                    superRareCardsCountLabel.setText("Очень редких карт: " + superRareCardsAmount + "/5");
-                    peopleCardsCountLabel.setText("Карт людей: 5/" + peopleCardAmount + "/10");
-                    buildingsCardsCountLabel.setText("Карт построек: 3/" + buildingCardAmount + "/10");
-                    deckSizeCountLabel.setText("Карт в колоде:\n" + deckSize + "/50");
-
-                    addButton.setText("Добавить " +
-                            deckCards.get(finalCurrentCard.card_id).current_amount +
-                            "/" + finalCurrentCard.current_amount);
+                    updateDeckLimits(addButton, finalCurrentCard);
                 }
             }
         });
@@ -559,6 +535,19 @@ public class DeckBuildingScreen implements Screen {
         }
     }
 
+    private void updateDeckLimits(TextButton addButton, Card finalCurrentCard) {
+        objectiveCountLabel.setText("Целей в колоде:\n" + objectiveAmount + "/7");
+        rareCardsCountLabel.setText("Редких карт:\n" + rareCardsAmount + "/15");
+        superRareCardsCountLabel.setText("Очень редких карт: " + superRareCardsAmount + "/5");
+        peopleCardsCountLabel.setText("Карт людей: 5/" + peopleCardAmount + "/10");
+        buildingsCardsCountLabel.setText("Карт построек: 3/" + buildingCardAmount + "/10");
+        deckSizeCountLabel.setText("Карт в колоде:\n" + deckSize + "/50");
+
+        addButton.setText("Добавить " +
+                deckCards.get(finalCurrentCard.card_id).current_amount +
+                "/" + finalCurrentCard.current_amount);
+    }
+
     public void changeUIVisibilityIfCardStage(boolean status) {
         deckNameField.setVisible(status);
         saveButton.setVisible(status);
@@ -570,6 +559,10 @@ public class DeckBuildingScreen implements Screen {
     }
 
     public Card getUserCardByID(int id, int currentAmount) {
+        return getCard(id, currentAmount, conn);
+    }
+
+    static Card getCard(int id, int currentAmount, Connection conn) {
         PreparedStatement cardPreparedStatement;
         try {
             cardPreparedStatement = conn.prepareStatement("SELECT * FROM cards WHERE card_id = ?");

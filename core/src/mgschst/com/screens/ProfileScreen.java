@@ -15,7 +15,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
 import mgschst.com.MainMgschst;
 import mgschst.com.UnlockCondition;
 import mgschst.com.connect.DatabaseHandler;
@@ -28,6 +27,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+
+import static mgschst.com.EffectHandler.makeNewCard;
+import static mgschst.com.screens.DeckBuildingScreen.getCard;
 
 public class ProfileScreen implements Screen {
     final MainMgschst game;
@@ -399,17 +401,7 @@ public class ProfileScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        game.setButtonPressed(false);
-        ScreenUtils.clear(0, 0, 0, 1);
-
-        camera.update();
-        batch.setProjectionMatrix(camera.combined);
-
-        batch.begin();
-        batch.end();
-
-        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-        stage.draw();
+        DeckBuildingScreen.renderScreen(game, camera, batch, stage);
     }
 
     @Override
@@ -458,12 +450,16 @@ public class ProfileScreen implements Screen {
             });
             cardTable.add(tempImage);
         }
-        cardTable.row();
-        for (String name : cardTable.getCells().toString().substring(1, cardTable.getCells().toString().length() - 1).split(", ")) {
-            if (cardPicturePath.equals(name)) {
-                cardTable.add(new Label("Выбрано", game.getChosenLabelStyle()));
+        makeTextRowInBuyTable(cardTable, cardPicturePath);
+    }
+
+    private void makeTextRowInBuyTable(Table table, String picturePath) {
+        table.row();
+        for (String name : table.getCells().toString().substring(1, table.getCells().toString().length() - 1).split(", ")) {
+            if (picturePath.equals(name)) {
+                table.add(new Label("Выбрано", game.getChosenLabelStyle()));
             } else {
-                cardTable.add(new Label(conditions.get(name).userGet(), game.getSmallLabelStyle()));
+                table.add(new Label(conditions.get(name).userGet(), game.getSmallLabelStyle()));
             }
         }
     }
@@ -482,14 +478,7 @@ public class ProfileScreen implements Screen {
             });
             boardTable.add(tempImage);
         }
-        boardTable.row();
-        for (String name : boardTable.getCells().toString().substring(1, boardTable.getCells().toString().length() - 1).split(", ")) {
-            if (boardPicturePath.equals(name)) {
-                boardTable.add(new Label("Выбрано", game.getChosenLabelStyle()));
-            } else {
-                boardTable.add(new Label(conditions.get(name).userGet(), game.getSmallLabelStyle()));
-            }
-        }
+        makeTextRowInBuyTable(boardTable, boardPicturePath);
     }
 
     public void fillAvas() {
@@ -505,14 +494,7 @@ public class ProfileScreen implements Screen {
             });
             avaTable.add(tempImage);
         }
-        avaTable.row();
-        for (String name : avaTable.getCells().toString().substring(1, avaTable.getCells().toString().length() - 1).split(", ")) {
-            if (profilePicturePath.equals(name)) {
-                avaTable.add(new Label("Выбрано", game.getChosenLabelStyle()));
-            } else {
-                avaTable.add(new Label(conditions.get(name).userGet(), game.getSmallLabelStyle()));
-            }
-        }
+        makeTextRowInBuyTable(avaTable, profilePicturePath);
     }
 
     public void fillDecks() {
@@ -604,21 +586,7 @@ public class ProfileScreen implements Screen {
                                 }
                             }
                         });
-                        TextButton noButton = new TextButton("Нет\n", game.getTextButtonStyle());
-                        noButton.addListener(new ChangeListener() {
-                            @Override
-                            public void changed(ChangeEvent event, Actor actor) {
-                                if (game.isButtonPressed()) {
-                                    game.setButtonPressed(true);
-                                    dialog.hide();
-                                }
-                            }
-                        });
-
-                        dialog.getButtonTable().add(yesButton);
-                        dialog.getButtonTable().add(noButton);
-
-                        dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
+                        endDialogCfg(dialog, yesButton);
                         dialog.scaleBy(game.xScaler - 1, game.yScaler - 1);
                         dialog.show(stage);
                     }
@@ -639,28 +607,23 @@ public class ProfileScreen implements Screen {
             });
             deckTable.add(tempLabel);
             Image tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/left_plus.png")));
-            tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
-            tempImage.addListener(new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y)
-                { game.setScreen(new DeckBuildingScreen(game, 0)); }
-            });
-            deckTable.add(tempImage);
+            addDeckBuildingListenerToImage(tempImage);
             tempImage = new Image(new Texture(Gdx.files.internal("ProfileAssets/right_plus.png")));
-            tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
-            tempImage.addListener(new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    game.setScreen(new DeckBuildingScreen(game, 0));
-                }
-            });
-            deckTable.add(tempImage);
-
-
+            addDeckBuildingListenerToImage(tempImage);
         } catch (SQLException exception) {
             exception.printStackTrace();
         }
 
+    }
+
+    private void addDeckBuildingListenerToImage(Image tempImage) {
+        tempImage.setSize(tempImage.getWidth() * game.xScaler, tempImage.getHeight() * game.yScaler);
+        tempImage.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y)
+            { game.setScreen(new DeckBuildingScreen(game, 0)); }
+        });
+        deckTable.add(tempImage);
     }
 
     public void fillConditions() {
@@ -736,46 +699,12 @@ public class ProfileScreen implements Screen {
                             String tempProductType = tempUnlockCondition.getProductType();
 
                             switch (tempType) {
-                                case "rank":
+                                case "rank" -> {
                                     tempCost = tempCost * 100 - 1;
-                                    if (tempCost <= rating) {
-                                        PreparedStatement preparedStatement;
-                                        if (tempProductType.equals("card")) {
-                                            preparedStatement = conn.prepareStatement("UPDATE users SET card_picture_path = ? WHERE nickname = ?");
-                                        } else if (tempProductType.equals("board")) {
-                                            preparedStatement = conn.prepareStatement("UPDATE users SET board_picture_path = ? WHERE nickname = ?");
-                                        } else {
-                                            preparedStatement = conn.prepareStatement("UPDATE users SET profile_picture_path = ? WHERE nickname = ?");
-                                        }
-                                        preparedStatement.setString(1, currentImage.getName());
-                                        preparedStatement.setString(2, game.getCurrentUserName());
-                                        preparedStatement.executeUpdate();
-
-                                        showSuccessfulPurchaseDialog();
-                                    } else {
-                                        errorPurchaseDialog();
-                                    }
-                                    break;
-                                case "level":
-                                    if (tempCost <= level) {
-                                        PreparedStatement preparedStatement;
-                                        if (tempProductType.equals("card")) {
-                                            preparedStatement = conn.prepareStatement("UPDATE users SET card_picture_path = ? WHERE nickname = ?");
-                                        } else if (tempProductType.equals("board")) {
-                                            preparedStatement = conn.prepareStatement("UPDATE users SET board_picture_path = ? WHERE nickname = ?");
-                                        } else {
-                                            preparedStatement = conn.prepareStatement("UPDATE users SET profile_picture_path = ? WHERE nickname = ?");
-                                        }
-                                        preparedStatement.setString(1, currentImage.getName());
-                                        preparedStatement.setString(2, game.getCurrentUserName());
-                                        preparedStatement.executeUpdate();
-
-                                        showSuccessfulPurchaseDialog();
-                                    } else {
-                                        errorPurchaseDialog();
-                                    }
-                                    break;
-                                case "buy":
+                                    noPayBuyChange(tempCost, tempProductType, rating, currentImage);
+                                }
+                                case "level" -> noPayBuyChange(tempCost, tempProductType, level, currentImage);
+                                case "buy" -> {
                                     if (tempCost <= dogtags) {
                                         PreparedStatement preparedStatement;
                                         if (tempProductType.equals("card")) {
@@ -794,21 +723,8 @@ public class ProfileScreen implements Screen {
                                     } else {
                                         errorPurchaseDialog();
                                     }
-                                    break;
-                                default:
-                                    PreparedStatement preparedStatement;
-                                    if (tempProductType.equals("card")) {
-                                        preparedStatement = conn.prepareStatement("UPDATE users SET card_picture_path = ? WHERE nickname = ?");
-                                    } else if (tempProductType.equals("board")) {
-                                        preparedStatement = conn.prepareStatement("UPDATE users SET board_picture_path = ? WHERE nickname = ?");
-                                    } else {
-                                        preparedStatement = conn.prepareStatement("UPDATE users SET profile_picture_path = ? WHERE nickname = ?");
-                                    }
-                                    preparedStatement.setString(1, currentImage.getName());
-                                    preparedStatement.setString(2, game.getCurrentUserName());
-                                    preparedStatement.executeUpdate();
-                                    showSuccessfulPurchaseDialog();
-                                    break;
+                                }
+                                default -> updateOnSuccessfulPurchase(tempProductType, currentImage);
                             }
                         } catch (SQLException throwables) {
                             throwables.printStackTrace();
@@ -821,6 +737,32 @@ public class ProfileScreen implements Screen {
                 }
             }
         });
+        endDialogCfg(dialog, yesButton);
+
+        dialog.show(stage);
+    }
+
+    private void updateOnSuccessfulPurchase(String tempProductType, Image currentImage) throws SQLException {
+        PreparedStatement preparedStatement;
+        if (tempProductType.equals("card")) {
+            preparedStatement = conn.prepareStatement("UPDATE users SET card_picture_path = ? WHERE nickname = ?");
+        } else if (tempProductType.equals("board")) {
+            preparedStatement = conn.prepareStatement("UPDATE users SET board_picture_path = ? WHERE nickname = ?");
+        } else {
+            preparedStatement = conn.prepareStatement("UPDATE users SET profile_picture_path = ? WHERE nickname = ?");
+        }
+        preparedStatement.setString(1, currentImage.getName());
+        preparedStatement.setString(2, game.getCurrentUserName());
+        preparedStatement.executeUpdate();
+        showSuccessfulPurchaseDialog();
+    }
+
+    private void noPayBuyChange(int tempCost, String tempProductType, Integer rating, Image currentImage) throws SQLException {
+        if (tempCost <= rating) updateOnSuccessfulPurchase(tempProductType, currentImage);
+        else errorPurchaseDialog();
+    }
+
+    private void endDialogCfg(Dialog dialog, TextButton yesButton) {
         TextButton noButton = new TextButton("Нет\n", game.getTextButtonStyle());
         noButton.addListener(new ChangeListener() {
             @Override
@@ -836,8 +778,6 @@ public class ProfileScreen implements Screen {
         dialog.getButtonTable().add(noButton);
 
         dialog.background(new TextureRegionDrawable(new Texture(Gdx.files.internal("Images/dialog_bg.png"))));
-
-        dialog.show(stage);
     }
 
     public void showSuccessfulPurchaseDialog() {
@@ -877,53 +817,14 @@ public class ProfileScreen implements Screen {
         PreparedStatement cardPreparedStatement;
         try {
             cardPreparedStatement = conn.prepareStatement("SELECT * FROM cards WHERE card_id = ?");
-            cardPreparedStatement.setInt(1, id);
-            ResultSet cardResultSet = cardPreparedStatement.executeQuery();
-            cardResultSet.next();
-            return new Card(cardResultSet.getInt("card_id"),
-                    cardResultSet.getString("name"),
-                    cardResultSet.getString("image_path"),
-                    cardResultSet.getString("type"),
-                    cardResultSet.getString("description"),
-                    cardResultSet.getInt("deck_limit"),
-                    cardResultSet.getString("cost_type"),
-                    cardResultSet.getInt("health_status"),
-                    cardResultSet.getString("effects"),
-                    cardResultSet.getInt("price"),
-                    cardResultSet.getInt("rareness"),
-                    cardResultSet.getInt("attack"),
-                    cardResultSet.getInt("defence"),
-                    cardResultSet.getInt("stealth"));
+            return makeNewCard(id, cardPreparedStatement);
         } catch (SQLException exception) {
             return null;
         }
     }
 
     public Card getUserCardByID(int id, int currentAmount) {
-        PreparedStatement cardPreparedStatement;
-        try {
-            cardPreparedStatement = conn.prepareStatement("SELECT * FROM cards WHERE card_id = ?");
-            cardPreparedStatement.setInt(1, id);
-            ResultSet cardResultSet = cardPreparedStatement.executeQuery();
-            cardResultSet.next();
-            return new Card(cardResultSet.getInt("card_id"),
-                    cardResultSet.getString("name"),
-                    cardResultSet.getString("image_path"),
-                    cardResultSet.getString("type"),
-                    cardResultSet.getString("description"),
-                    cardResultSet.getInt("deck_limit"),
-                    cardResultSet.getString("cost_type"),
-                    cardResultSet.getInt("health_status"),
-                    cardResultSet.getString("effects"),
-                    cardResultSet.getInt("price"),
-                    cardResultSet.getInt("rareness"),
-                    cardResultSet.getInt("attack"),
-                    cardResultSet.getInt("defence"),
-                    cardResultSet.getInt("stealth"),
-                    currentAmount);
-        } catch (SQLException exception) {
-            return null;
-        }
+        return getCard(id, currentAmount, conn);
     }
 
     public void openCrateDialog(int firstCardID, int secondCardID, int thirdCardID, ArrayList<Integer> soldCards) {

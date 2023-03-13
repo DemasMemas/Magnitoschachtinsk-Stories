@@ -16,12 +16,15 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
 import mgschst.com.EffectHandler;
 import mgschst.com.MainMgschst;
 import mgschst.com.connect.DatabaseHandler;
 import mgschst.com.connect.TCPConnection;
+import mgschst.com.dbObj.Building.Building;
 import mgschst.com.dbObj.Card;
+import mgschst.com.dbObj.Equipment.Armor;
+import mgschst.com.dbObj.Equipment.Weapon;
+import mgschst.com.dbObj.People.Person;
 import mgschst.com.dbObj.SecondPlayer;
 
 import java.sql.Connection;
@@ -29,8 +32,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
+
+import static mgschst.com.EffectHandler.getCard;
 
 public class GameScreen implements Screen {
     final MainMgschst game;
@@ -56,18 +62,19 @@ public class GameScreen implements Screen {
     String boardPicturePath = null;
 
     SecondPlayer secondPlayer;
-    HorizontalGroup firstPlayerHand = new HorizontalGroup();
-    HorizontalGroup secondPlayerHand = new HorizontalGroup();
-
+    HorizontalGroup firstPlayerHand  = new HorizontalGroup(), secondPlayerHand = new HorizontalGroup();
     boolean myTurn = false;
     Stage cardStage = new Stage();
     Boolean isCardStageActive = false;
-    HorizontalGroup firstPlayerField = new HorizontalGroup();
+    HorizontalGroup firstPlayerField = new HorizontalGroup(), secondPlayerField = new HorizontalGroup();
     HashMap<Integer, Card> firstPlayerActiveCards = new HashMap<>();
+    HashMap<Integer, Card> secondPlayerActiveCards = new HashMap<>();
     static int lastPlayedCardID = 0;
+    public static ArrayList<Integer> globalEffects = new ArrayList<>();
 
     Label victoryPointsFirstPlayer, victoryPointsSecondPlayer;
     VerticalGroup resourcesGroup = new VerticalGroup();
+    int resourceMax = 5;
 
     public GameScreen(final MainMgschst game) {
         PreparedStatement preparedStatement;
@@ -105,7 +112,12 @@ public class GameScreen implements Screen {
         endTurnButton.setPosition(25, 525);
         endTurnButton.addListener(new ClickListener(){
             @Override
-            public void clicked(InputEvent event, float x, float y){ if (myTurn) endTurn(); }});
+            public void clicked(InputEvent event, float x, float y){
+                if (myTurn) {
+                    endTurn();
+                    setPlayerEndedTurn();
+                }
+            }});
         stage.addActor(endTurnButton);
 
         turnTimer = new Label("60 секунд...", game.getMainLabelStyle());
@@ -135,22 +147,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        game.setButtonPressed(false);
-        ScreenUtils.clear(0, 0, 0, 1);
-
-        camera.update();
-        batch.setProjectionMatrix(camera.combined);
-
-        batch.begin();
-        batch.end();
-
-        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-        stage.draw();
-
-        if (isCardStageActive) {
-            cardStage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
-            cardStage.draw();
-        }
+        DeckBuildingScreen.renderScreenWithCardStage(game, camera, batch, stage, isCardStageActive, cardStage);
     }
 
     @Override public void resize(int width, int height) { }
@@ -239,12 +236,6 @@ public class GameScreen implements Screen {
         Image firstDeck = new Image(new Texture(Gdx.files.internal
                 ("UserInfo/Cards/GameCards/" + cardPicturePath)));
         firstDeck.setPosition(25, 200);
-        firstDeck.addListener(new ClickListener(){
-            @Override
-            public void clicked(InputEvent event, float x, float y){
-                // показать верхние 5 карт, если разведцентр установлен
-            }
-        });
         stage.addActor(firstDeck);
         stage.addActor(firstCardCounter);
         Image firstAvatar = new Image(new Texture(Gdx.files.internal
@@ -264,12 +255,12 @@ public class GameScreen implements Screen {
 
         resourcesGroup.setPosition(1685, 500);
         resourcesGroup.space(5f);
-        addNewResource(5);
+        addNewResource(resourceMax);
         stage.addActor(resourcesGroup);
     }
     public void secondPlayerInitialize(){
         // счетчик карт в колоде
-        secondCardCounter = new Label("43", game.getMainLabelStyle());
+        secondCardCounter = new Label("50", game.getMainLabelStyle());
         secondCardCounter.setPosition(1740, 755);
         secondCardCounter.setAlignment(Align.center);
         secondCardCounter.setWidth(150f * game.xScaler);
@@ -296,9 +287,14 @@ public class GameScreen implements Screen {
         stage.addActor(secondName);
 
         secondPlayerHand.space(-40f);
-        for (int i = 0; i < 7; i++)
-            secondPlayerHand.addActor(new Image(new Texture(
-                    Gdx.files.internal("UserInfo/Cards/GameCards/" + secondPlayer.cardPicturePath))));
+
+        secondPlayerField.setPosition(360, 595);
+        secondPlayerField.setWidth(1270 * game.xScaler);
+        secondPlayerField.setHeight(270 * game.xScaler);
+        secondPlayerField.align(Align.center);
+        secondPlayerField.space(10f);
+        secondPlayerField.pad(10f);
+        stage.addActor(secondPlayerField);
 
         victoryPointsSecondPlayer = new Label("ПО: 0/5", game.getMainLabelStyle());
         victoryPointsSecondPlayer.setColor(Color.GOLDENROD);
@@ -307,7 +303,7 @@ public class GameScreen implements Screen {
     }
 
     public void changeTimer(int time){
-        if (time == 0 && myTurn) { endTurn(); return; }
+        if (time == 0 && myTurn) { endTurn(); setPlayerEndedTurn(); return; }
         String timer = String.valueOf(time);
         if (timer.startsWith("1") && timer.length() == 2){
             turnTimer.setText(time + " секунд...");
@@ -374,15 +370,22 @@ public class GameScreen implements Screen {
             public void dragStop(InputEvent event, float x, float y, int pointer) {
                 tempImage.setName("");
                 // проверка на то, чей ход
-                if (!myTurn){
-                    firstPlayerHand.removeActor(tempImage);
-                    firstPlayerHand.addActor(tempImage);
-                    return;
-                }
+                if (!myTurn){returnCardInHand(tempImage);return;}
+
                 // Проверка на количество разыгранных карт
                 if (firstPlayerField.getChildren().size >= 8 && (tempCard.type.equals("building") ||
                         tempCard.type.equals("people") || tempCard.type.equals("summon_people")))
-                {useTurnLabel("Нельзя разыграть больше карт"); return;}
+                {useTurnLabel("Нельзя разыграть больше карт");
+                    returnCardInHand(tempImage); return;}
+
+                // Проверка на наличие людей на карте
+                if ((tempCard.type.equals("equip_weapon")||tempCard.type.equals("equip_helmet")||
+                        tempCard.type.equals("equip_armor")||tempCard.type.equals("equip_heal")||
+                        tempCard.type.equals("equip_add"))&&
+                        firstPlayerActiveCards.values().stream()
+                                .map(a -> a.type.equals("people")).findAny().isEmpty()){
+                    useTurnLabel("Нет активных людей для использования");
+                    returnCardInHand(tempImage); return;}
 
                 // проверка на нахождение в игровой зоне (зона сдвинута на 565/70 из-за либгыдыха)
                 if (tempImage.getX() + (tempImage.getWidth() / 2) < 1065 * game.xScaler &&
@@ -394,34 +397,17 @@ public class GameScreen implements Screen {
                 }
 
                 // если поместить карту не в игровую зону
-                firstPlayerHand.removeActor(tempImage);
-                firstPlayerHand.addActor(tempImage);
+                returnCardInHand(tempImage);
             }
         });
         firstPlayerHand.addActor(tempImage);
     }
-
+    public void returnCardInHand(Image tempImage){
+        firstPlayerHand.removeActor(tempImage);
+        firstPlayerHand.addActor(tempImage);
+    }
     public Card getCardByID(int id) {
-        try {
-            PreparedStatement cardPreparedStatement = conn.prepareStatement("SELECT * FROM cards WHERE card_id = ?");
-            cardPreparedStatement.setInt(1, id);
-            ResultSet cardResultSet = cardPreparedStatement.executeQuery();
-            cardResultSet.next();
-            return new Card(cardResultSet.getInt("card_id"),
-                    cardResultSet.getString("name"),
-                    cardResultSet.getString("image_path"),
-                    cardResultSet.getString("type"),
-                    cardResultSet.getString("description"),
-                    cardResultSet.getInt("deck_limit"),
-                    cardResultSet.getString("cost_type"),
-                    cardResultSet.getInt("health_status"),
-                    cardResultSet.getString("effects"),
-                    cardResultSet.getInt("price"),
-                    cardResultSet.getInt("rareness"),
-                    cardResultSet.getInt("attack"),
-                    cardResultSet.getInt("defence"),
-                    cardResultSet.getInt("stealth"));
-        } catch (SQLException exception) { return null; }
+        return getCard(id, conn);
     }
 
     public void useTurnLabel(String text){
@@ -502,10 +488,10 @@ public class GameScreen implements Screen {
 
     public void playCard(Card tempCard, Image tempImage){
         if (!checkPrice(tempCard, tempImage)) return;
+        playerConn.sendString("cardFromHand," + game.getCurrentGameID() + "," + game.getCurrentUserName());
         if (tempCard.effects != null)
-        for(String effect:tempCard.effects.split(","))
-            EffectHandler.handEffect(Integer.parseInt(effect), tempCard, game);
-
+            for(String effect:tempCard.effects.split(","))
+                EffectHandler.handEffect(Integer.parseInt(effect), tempCard, game);
         // убрать карту из руки
         firstPlayerHand.removeActor(tempImage);
         tempImage.getListeners().clear();
@@ -556,31 +542,9 @@ public class GameScreen implements Screen {
                     for (Actor tempActor : deleteList)
                         resourcesGroup.removeActor(tempActor, true);
                     deleteList.clear();
-                    for (Actor tempActor : resourcesGroup.getChildren().items) {
-                        if (counter == 0) break;
-                        try {
-                            if (tempActor.getName().equals(tempCard.cost_type)) {
-                                counter -= 1;
-                                deleteList.add(tempActor);
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    for (Actor tempActor : deleteList)
-                        resourcesGroup.removeActor(tempActor, true);
+                    deleteSameResource(tempCard, counter, deleteList);
                 } else {
-                    for (Actor tempActor : resourcesGroup.getChildren().items) {
-                        if (counter == 0) break;
-                        try {
-                            if (tempActor.getName().equals(tempCard.cost_type)) {
-                                counter -= 1;
-                                deleteList.add(tempActor);
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    for (Actor tempActor : deleteList)
-                        resourcesGroup.removeActor(tempActor, true);
+                    counter = deleteSameResource(tempCard, counter, deleteList);
                     deleteList.clear();
                     for (Actor tempActor : resourcesGroup.getChildren().items) {
                         if (counter == 0) break;
@@ -606,7 +570,47 @@ public class GameScreen implements Screen {
         return true;
     }
 
+    private int deleteSameResource(Card tempCard, int counter, ArrayList<Actor> deleteList) {
+        for (Actor tempActor : resourcesGroup.getChildren().items) {
+            if (counter == 0) break;
+            try {
+                if (tempActor.getName().equals(tempCard.cost_type)) {
+                    counter -= 1;
+                    deleteList.add(tempActor);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        for (Actor tempActor : deleteList)
+            resourcesGroup.removeActor(tempActor, true);
+        return counter;
+    }
+
     public void spawnPeople(Card card){
+        Image tempImage = addToPlayedCards(card);
+        playerConn.sendString("playCard," + game.getCurrentGameID() + "," + game.getCurrentUserName() + "," +
+                "person," + card.getPersonCard());
+        tempImage.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+
+            }
+        });
+    }
+
+    public void spawnBuilding(Card card){
+        Image tempImage = addToPlayedCards(card);
+        playerConn.sendString("playCard," + game.getCurrentGameID() + "," + game.getCurrentUserName() + "," +
+                "building," + card.getBuildingCard());
+        tempImage.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+
+            }
+        });
+    }
+
+    public Image addToPlayedCards(Card card){
         // разместить карту на поле
         firstPlayerActiveCards.put(lastPlayedCardID, card);
         Image tempImage = new Image(new Texture(
@@ -615,6 +619,70 @@ public class GameScreen implements Screen {
         lastPlayedCardID++;
         // добавить информацию о карте и дать ей возможность действовать
         firstPlayerField.addActor(tempImage);
+        return tempImage;
+    }
+
+    public void placeEnemyCard(String cardType, String cardInfo){
+        String[] info = cardInfo.split(" ");
+        Card tempCard = getCardByID(Integer.parseInt(info[0]));
+        if (cardType.equals("people")){
+            Person tempPerson = new Person();
+
+            // setting armor
+            String[] armorInfo = info[1].split(";");
+            Armor tempArmor;
+            if (armorInfo.length == 3)
+                tempArmor = new Armor(Integer.parseInt(armorInfo[0]), Integer.parseInt(armorInfo[1]),
+                        armorInfo[2], null);
+            else
+                tempArmor = new Armor(Integer.parseInt(armorInfo[0]), Integer.parseInt(armorInfo[1]),
+                        armorInfo[2], Arrays.stream(armorInfo[3].split(";")).mapToInt(Integer::parseInt).toArray());
+            tempPerson.setArmor(tempArmor);
+
+            // setting weapon
+            String[] weaponInfo = info[1].split(";");
+            Weapon tempWeapon;
+            if (armorInfo.length == 3)
+                tempWeapon = new Weapon(Integer.parseInt(weaponInfo[0]), Integer.parseInt(weaponInfo[1]),
+                        weaponInfo[2], null);
+            else
+                tempWeapon = new Weapon(Integer.parseInt(weaponInfo[0]), Integer.parseInt(weaponInfo[1]),
+                        weaponInfo[2], Arrays.stream(weaponInfo[3].split(";")).mapToInt(Integer::parseInt).toArray());
+            tempPerson.setWeapon(tempWeapon);
+
+            // set everything else later
+            tempCard.person = tempPerson;
+        } else
+            tempCard.building = new Building(Integer.parseInt(info[0]));
+
+        secondPlayerActiveCards.put(lastPlayedCardID, tempCard);
+
+        Image tempImage = new Image(new Texture(
+                Gdx.files.internal("Cards/inGame/" + tempCard.image_path)));
+        tempImage.setName(String.valueOf(lastPlayedCardID));
+        lastPlayedCardID++;
+        // set listener to image
+        secondPlayerField.addActor(tempImage);
+    }
+
+    public void dropCardFromEnemyHand(){
+        secondPlayerHand.removeActorAt(0, true);
+    }
+    public void setPlayerEndedTurn(){
+        playerConn.sendString("endTurn," + game.getCurrentGameID() + "," + game.getCurrentUserName());
+    }
+    public void enemyTakeCard(){
+        secondPlayerHand.addActor(new Image(new Texture(
+                Gdx.files.internal("UserInfo/Cards/GameCards/" + secondPlayer.cardPicturePath))));
+        secondCardCounter.setText(Integer.parseInt(String.valueOf(secondCardCounter.getText())) - 1);
+    }
+    public void updateResources(){
+        resourcesGroup.clear();
+        addNewResource(resourceMax);
+    }
+    public void checkRoundEndStatus(){
+        // проверка эффектов всех карт и целей
+        // реализовать позже
     }
 }
 
