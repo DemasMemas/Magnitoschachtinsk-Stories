@@ -1,7 +1,5 @@
 package mgschst.com.dbObj.Equipment;
 
-import java.util.Arrays;
-
 public class Armor {
     private int id;
     private int defence;
@@ -45,16 +43,13 @@ public class Armor {
         return maxDefence;
     }
 
-    public void setMaxDefence(int maxDefence) {
-        this.maxDefence = maxDefence;
-    }
     @Override
     public String toString(){
         if (getEffect() != null){
             StringBuilder effects = new StringBuilder();
             for (int i:getEffect())
                 effects.append(i).append(":");
-            effects.deleteCharAt(effects.length() - 1);
+            if (effects.length() > 0) effects.deleteCharAt(effects.length() - 1);
             return getId() + ";" + getDefence() + ";" + getName() + ";" + effects;
         }
         else return getId() + ";" + getDefence() + ";" + getName();

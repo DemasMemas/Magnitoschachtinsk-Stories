@@ -7,9 +7,9 @@ public class Person {
         return id;
     }
     int id;
-    Armor armor;
-    Helmet helmet;
-    Weapon weapon;
+    Armor armor = new Armor(0, 0, "Нет брони", new int[]{});
+    Helmet helmet = new Helmet(0, 0, "Нет шлема", new int[]{});
+    Weapon weapon = new Weapon(0, 0, "Нет оружия", new int[]{});
     AdditionalEquipment firstAddEquip;
     AdditionalEquipment secondAddEquip;
     boolean fought = false;
@@ -62,5 +62,25 @@ public class Person {
     }
     public void setHealth(boolean health) {
         this.health = health;
+    }
+
+    public Armor getArmor() {
+        return armor;
+    }
+
+    public Helmet getHelmet() {
+        return helmet;
+    }
+
+    public Weapon getWeapon() {
+        return weapon;
+    }
+
+    public AdditionalEquipment getFirstAddEquip() {
+        return firstAddEquip;
+    }
+
+    public AdditionalEquipment getSecondAddEquip() {
+        return secondAddEquip;
     }
 }

@@ -39,7 +39,7 @@ public class Weapon {
             StringBuilder effects = new StringBuilder();
             for (int i:getEffectList())
                 effects.append(i).append(":");
-            effects.deleteCharAt(effects.length() - 1);
+            if (effects.length() > 0) effects.deleteCharAt(effects.length() - 1);
             return getId() + ";" + getAttack() + ";" + getName() + ";" + effects;
         }
         else return getId() + ";" + getAttack() + ";" + getName();

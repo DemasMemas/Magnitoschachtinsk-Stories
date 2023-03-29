@@ -16,7 +16,6 @@ public class Building {
         this.id = id;
         attackBonus = 0;
         defenceBonus = 0;
-        builtInWeapon = null;
         switch (id) {
             case 5 -> {
                 // верстак, добавить возможность чинить
@@ -25,15 +24,16 @@ public class Building {
                 defenceBonus = 1;
                 // налетная, добавить выдачу снаряжения
             }
-            case 48 -> {
-                defenceBonus = 2;
-                // склад, добавить пополнение отстрелявшихся
-            }
+            case 48 -> // склад
+                    defenceBonus = 2;
             case 53-> {
                 // разведцентр, добавить выдачу целей
             }
             case 50-> {
                 // медблок, расширить на 1
+            }
+            case 54 -> {
+                // ценный груз, цель
             }
         }
     }
@@ -52,14 +52,6 @@ public class Building {
 
     public void setDefenceBonus(int defenceBonus) {
         this.defenceBonus = defenceBonus;
-    }
-
-    public Weapon getBuiltInWeapon() {
-        return builtInWeapon;
-    }
-
-    public void setBuiltInWeapon(Weapon builtInWeapon) {
-        this.builtInWeapon = builtInWeapon;
     }
 
     public boolean isHealth() {

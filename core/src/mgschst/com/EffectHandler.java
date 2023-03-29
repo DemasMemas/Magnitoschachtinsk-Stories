@@ -3,6 +3,7 @@ package mgschst.com;
 import mgschst.com.connect.DatabaseHandler;
 import mgschst.com.dbObj.Building.Building;
 import mgschst.com.dbObj.Card;
+import mgschst.com.dbObj.Objective;
 import mgschst.com.dbObj.People.ArmyRu;
 import mgschst.com.dbObj.People.Bandit;
 import mgschst.com.dbObj.People.MercRu;
@@ -18,7 +19,7 @@ import java.util.Random;
 
 public class EffectHandler {
     static Connection conn = new DatabaseHandler().getConnection();
-    static HashMap<Integer, String> effectMap;
+    public static HashMap<Integer, String> effectMap;
     static {
         effectMap = new HashMap<>();
         fillMap();
@@ -34,12 +35,12 @@ public class EffectHandler {
         effectMap.put(3, "people,bandit,Вызов стандартного бандита");
         effectMap.put(4, "people,bandit_attack,Вызов бандита-налётчика");
         effectMap.put(5, "people,bandit_defence,Вызов бандита-патрульного");
-        effectMap.put(6, "building,workbench,В сооружении можно починить снаряжение до максимальной прочности и снять отрицательные статусы");
-        //effectMap.put(7, "Установить цель по названию карты");
+        effectMap.put(6, "building");
+        effectMap.put(7, "Оружие с 75% шансом стреляет в голову");
         effectMap.put(11, "Убивает цель атаки, если на ней нет брони");
-        effectMap.put(12, "Отрицательный статус. Эффект снаряжения имеет шанс 25% не сработать");
+        effectMap.put(12, "Поломано. Эффект снаряжения имеет шанс 25% не сработать");
         effectMap.put(13, "Оружие производит две атаки");
-        //effectMap.put(10, "Имеет 50% шанс дать дополнительное действие");
+        effectMap.put(8, "Имеет 50% шанс дать дополнительное действие");
         effectMap.put(14, "При атаке на вашего бойца, он будет атаковать первый");
         effectMap.put(9, "people,mercenary_ru,Выдача снаряжения российскому наёмнику");
         effectMap.put(16, "Ваш боец при атаке учитывает только защиту шлема противника и гарантированно попадает");
@@ -51,7 +52,7 @@ public class EffectHandler {
         effectMap.put(22, "75% шанс отменить ранение до конца раунда");
         effectMap.put(23, "В конце раунда боец умирает, если был ранен, или становится ранен, если был цел");
         effectMap.put(24, "Боец не может иметь статус здоровья лучше чем ранен");
-        effectMap.put(25, "Боец не может использовать снайперские винтовки и оптические прицелы");
+        effectMap.put(25, "Боец не может использовать снайперские винтовки");
         effectMap.put(26, "spawn,mercenary_ru,2,Призыв 2 случайных российских наёмников");
         effectMap.put(27, "spawn,army_ru,2,Призыв 2 случайных российских военных");
         effectMap.put(28, "Выдача снаряжения российскому военному");
@@ -69,13 +70,10 @@ public class EffectHandler {
         effectMap.put(38, "Выдача 4 случайных медикаментов");
         effectMap.put(39, "Один человек становится неактивен. Вы получаете 2 карты случайного снаряжения");
         effectMap.put(40, "Два человека становятся неактивны. Вы получаете 3 карты случайного хорошего снаряжения. Шанс 25%, что боец с самой низкой защитой умрет");
-        effectMap.put(41, "building,raid_station,В конце раунда вы получаете 1 карту случайного снаряжения");
         effectMap.put(42, "Если у цели атаки - огнестрельное оружие, она атакует первой");
-        effectMap.put(43, "building,extended_med,Расширяет медблок на одно место");
         effectMap.put(44, "Восполняет действие \"Отстрелявшегося\"");
-        effectMap.put(45, "building,ammo_storage,50% шанс восполнить действие только что \"Отстрелявшегося\"");
-        effectMap.put(46, "building,intelligence_center,Вы получаете случайную цель в конце раунда");
-        effectMap.put(10, "После атаки необходимо дополнительно отдыхать раунд");
+        effectMap.put(10, "Отстрелявшийся боец не может вернуться в бой в этом раунде");
+        effectMap.put(15, "objective");
     }
 
     public static void playEffect(String[] commandList, Card tempCard, final MainMgschst game){
@@ -115,20 +113,13 @@ public class EffectHandler {
 // f
             }
             case "objective" -> {
-//v
+                GameScreen currentScreen = (GameScreen) game.getScreen();
+                currentScreen.setNewObjective(new Objective(tempCard.card_id));
             }
             case "action" -> {
 //j
             }
-            case "building" -> {
-                switch (commandList[1]){
-                    case "workbench" -> spawnBuilding(new Building(5), game);
-                    case "raid_station" -> spawnBuilding(new Building(47), game);
-                    case "ammo_storage" -> spawnBuilding(new Building(48), game);
-                    case "intelligence_center" -> spawnBuilding(new Building(53), game);
-                    case "extended_med" -> spawnBuilding(new Building(50), game);
-                }
-            }
+            case "building" -> spawnBuilding(new Building(tempCard.card_id), game);
             case "people" -> {
                 switch (commandList[1]){
                     case "bandit" -> spawnPeople(new Bandit(4), game);

@@ -29,7 +29,6 @@ public class TCPConnectionHandler implements TCPConnectionListener {
         Gdx.app.postRunnable(() -> {
             switch (commandList.get(0)) {
                 case "writeChatMsg" -> {
-                    System.out.println(commandList.get(1) + ": " + commandList.get(2));
                     if (commandList.get(2).split(":")[0].equals("Game created with ID"))
                         game.setCurrentGameID(Integer.parseInt(commandList.get(2).split(":")[1].trim()));
                     GameScreen currentScreen = (GameScreen) game.getScreen();
@@ -69,7 +68,6 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                     currentScreen.takeCard(Integer.parseInt(commandList.get(1)));
                 }
                 case "enemyCard" -> {
-                    System.out.println(commandList);
                     GameScreen currentScreen = (GameScreen) game.getScreen();
                     currentScreen.placeEnemyCard(commandList.get(1), commandList.get(2));
                 }
@@ -88,6 +86,14 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                 case "checkRoundEndStatus" -> {
                     GameScreen currentScreen = (GameScreen) game.getScreen();
                     currentScreen.checkRoundEndStatus();
+                }
+                case "enemyNewObjective" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.setNewEnemyObjective(Integer.parseInt(commandList.get(1)));
+                }
+                case "updateEnemyVictoryPoints" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.updateEnemyVictoryPoints(Integer.parseInt(commandList.get(1)), commandList.get(2));
                 }
             }
         });

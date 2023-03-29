@@ -318,7 +318,7 @@ public class DeckBuildingScreen implements Screen {
                         @Override
                         public void clicked(InputEvent event, float x, float y) {
                             // Открыть сведения о карте в новом Stage
-                            fillCurrentCardStage(getCardByID(finalJ + (finalI * 7)));
+                            fillCurrentCardStage(getCardByID(finalJ + (finalI * 7)), 800);
                             Gdx.input.setInputProcessor(cardStage);
                             isCardStageActive = true;
                         }
@@ -354,44 +354,17 @@ public class DeckBuildingScreen implements Screen {
         }
     }
 
-    public void fillCurrentCardStage(Card currentCard) {
+    public void fillCurrentCardStage(Card currentCard, float cardNameHeight) {
         currentCard = userCards.get(currentCard.card_id);
         Card finalCurrentCard = currentCard;
         cardStage = new Stage();
         changeUIVisibilityIfCardStage(false);
 
-        Image bg = new Image(new Texture(Gdx.files.internal("DeckAssets/card_info_bg.png")));
-        bg.setPosition(25, 125);
-        cardStage.addActor(bg);
-
-        Image cardImage = new Image(new Texture(Gdx.files.internal("Cards/origs/" + currentCard.image_path)));
-        cardImage.setPosition(50, 325);
-        cardStage.addActor(cardImage);
-
-        Label cardName = new Label(currentCard.name, game.getMainLabelStyle());
-        cardName.setPosition(950 - (currentCard.name.length() * 12), 800);
-        cardStage.addActor(cardName);
+        GameScreen.fillCardStageBasis(currentCard, cardStage, game, cardNameHeight);
 
         Label cardDesc = new Label(currentCard.description, game.getMainLabelStyle());
         cardDesc.setPosition(475, 650);
-        cardDesc.setWidth(1000 * game.xScaler);
-        cardDesc.setWrap(true);
-        cardDesc.setAlignment(Align.center);
-        cardStage.addActor(cardDesc);
-
-        Label cardPrice = new Label("", game.getMainLabelStyle());
-        switch (currentCard.cost_type) {
-            case "free" -> cardPrice.setText("Бесплатно");
-            case "prapor" -> cardPrice.setText("Прапор: " + currentCard.price + " поддержк" + (currentCard.price == 1 ? "а" : "и"));
-            case "mechanic" -> cardPrice.setText("Механик: " + currentCard.price + " поддержк" + (currentCard.price == 1 ? "а" : "и"));
-            case "therapist" -> cardPrice.setText("Терапевт:  " + currentCard.price + " поддержк" + (currentCard.price == 1 ? "а" : "и"));
-            case "any" -> cardPrice.setText("Любая поддержка:  " + currentCard.price);
-        }
-        cardPrice.setPosition(50, 950);
-        cardPrice.setWidth(400 * game.xScaler);
-        cardPrice.setWrap(true);
-        cardPrice.setAlignment(Align.center);
-        cardStage.addActor(cardPrice);
+        GameScreen.addCardPriceAndDescOnCardStage(currentCard, cardDesc, game, cardStage);
 
         TextButton closeButton = new TextButton("Закрыть", game.getTextButtonStyle());
         closeButton.setPosition(160, 250);
