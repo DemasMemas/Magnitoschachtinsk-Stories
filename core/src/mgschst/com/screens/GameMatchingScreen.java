@@ -29,7 +29,6 @@ public class GameMatchingScreen implements Screen {
     final OrthographicCamera camera;
     final Batch batch;
     Stage stage;
-
     Image background;
 
     TextButton exitButton;
@@ -141,7 +140,6 @@ public class GameMatchingScreen implements Screen {
                     } catch (SQLException e) {
                         System.out.println("Жеееесть SQL недоступен");
                     }
-
 
                     int finalTempGameID = tempGameID;
                     tempLabel.addListener(new ClickListener() {

@@ -1,20 +1,20 @@
 package mgschst.com.dbObj.Building;
 
+import mgschst.com.dbObj.Card;
 
-import mgschst.com.dbObj.Equipment.Weapon;
+import java.util.ArrayList;
 
 public class Building {
     public int getId() {
         return id;
     }
     int id;
-    int attackBonus;
     int defenceBonus;
-    Weapon builtInWeapon;
     boolean health = true;
+    ArrayList<Card> defenderList = new ArrayList<>();
+    boolean alreadyUsed = false;
     public Building(int id){
         this.id = id;
-        attackBonus = 0;
         defenceBonus = 0;
         switch (id) {
             case 5 -> {
@@ -37,28 +37,28 @@ public class Building {
             }
         }
     }
-
-    public int getAttackBonus() {
-        return attackBonus;
-    }
-
-    public void setAttackBonus(int attackBonus) {
-        this.attackBonus = attackBonus;
-    }
-
     public int getDefenceBonus() {
         return defenceBonus;
     }
-
     public void setDefenceBonus(int defenceBonus) {
         this.defenceBonus = defenceBonus;
     }
-
     public boolean isHealth() {
         return health;
     }
-
     public void setHealth(boolean health) {
         this.health = health;
+    }
+    public ArrayList<Card> getDefenderList() {
+        return defenderList;
+    }
+    public void setDefenderList(ArrayList<Card> defenderList) {
+        this.defenderList = defenderList;
+    }
+    public boolean isAlreadyUsed() {
+        return alreadyUsed;
+    }
+    public void setAlreadyUsed(boolean alreadyUsed) {
+        this.alreadyUsed = alreadyUsed;
     }
 }

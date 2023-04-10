@@ -37,12 +37,14 @@ public class EffectHandler {
         effectMap.put(5, "people,bandit_defence,Вызов бандита-патрульного");
         effectMap.put(6, "building");
         effectMap.put(7, "Оружие с 75% шансом стреляет в голову");
+        effectMap.put(8, "Имеет 50% шанс дать дополнительное действие");
+        effectMap.put(9, "people,mercenary_ru,Выдача снаряжения российскому наёмнику");
+        effectMap.put(10, "Отстрелявшийся боец не может вернуться в бой в этом раунде");
         effectMap.put(11, "Убивает цель атаки, если на ней нет брони");
         effectMap.put(12, "Поломано. Эффект снаряжения имеет шанс 25% не сработать");
         effectMap.put(13, "Оружие производит две атаки");
-        effectMap.put(8, "Имеет 50% шанс дать дополнительное действие");
         effectMap.put(14, "При атаке на вашего бойца, он будет атаковать первый");
-        effectMap.put(9, "people,mercenary_ru,Выдача снаряжения российскому наёмнику");
+        effectMap.put(15, "objective");
         effectMap.put(16, "Ваш боец при атаке учитывает только защиту шлема противника и гарантированно попадает");
         effectMap.put(17, "При атаке на ваше сооружение один из атакующих умирает, теряя все снаряжение");
         effectMap.put(18, "Останавливает кровотечение");
@@ -63,17 +65,13 @@ public class EffectHandler {
         effectMap.put(33, "people,army_spec-ops_ru,Вызов бойца спецназа РФ");
         effectMap.put(34, "people,army_patrol_ru,Вызов патрульного военного РФ");
         effectMap.put(35, "people,army_ru,Вызов военного РФ");
-        //effectMap.put(34, "Атакованный не получает урон, но щит разрушается");
-        //effectMap.put(35, "Подавляет одного противника и с шансом 25% ранит его");
-        effectMap.put(36, "Подавляет всех противников при обороне, или одного при атаке");
+        effectMap.put(36, "equip");
         effectMap.put(37, "Выдача 2 случайных медикаментов");
         effectMap.put(38, "Выдача 4 случайных медикаментов");
         effectMap.put(39, "Один человек становится неактивен. Вы получаете 2 карты случайного снаряжения");
         effectMap.put(40, "Два человека становятся неактивны. Вы получаете 3 карты случайного хорошего снаряжения. Шанс 25%, что боец с самой низкой защитой умрет");
         effectMap.put(42, "Если у цели атаки - огнестрельное оружие, она атакует первой");
         effectMap.put(44, "Восполняет действие \"Отстрелявшегося\"");
-        effectMap.put(10, "Отстрелявшийся боец не может вернуться в бой в этом раунде");
-        effectMap.put(15, "objective");
     }
 
     public static void playEffect(String[] commandList, Card tempCard, final MainMgschst game){
@@ -110,7 +108,8 @@ public class EffectHandler {
                 }
             }
             case "equip" -> {
-// f
+                GameScreen currentScreen = (GameScreen) game.getScreen();
+                currentScreen.changeEquip(tempCard);
             }
             case "objective" -> {
                 GameScreen currentScreen = (GameScreen) game.getScreen();

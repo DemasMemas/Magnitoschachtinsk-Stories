@@ -3,7 +3,7 @@ package mgschst.com.dbObj.Equipment;
 public class Armor {
     private int id;
     private int defence;
-    private int maxDefence;
+    private final int maxDefence;
     private final String name;
     private int[] effectList;
 
@@ -35,23 +35,24 @@ public class Armor {
         this.effectList = effect;
     }
 
-    public int getId() { return id; }
+    public int getId() {
+        return id;
+    }
 
-    public void setId(int id) { this.id = id; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getMaxDefence() {
         return maxDefence;
     }
 
     @Override
-    public String toString(){
-        if (getEffect() != null){
-            StringBuilder effects = new StringBuilder();
-            for (int i:getEffect())
-                effects.append(i).append(":");
-            if (effects.length() > 0) effects.deleteCharAt(effects.length() - 1);
-            return getId() + ";" + getDefence() + ";" + getName() + ";" + effects;
-        }
-        else return getId() + ";" + getDefence() + ";" + getName();
+    public String toString() {
+        StringBuilder effects = new StringBuilder();
+        for (int i : getEffect())
+            effects.append(i).append(":");
+        if (effects.length() > 0) effects.deleteCharAt(effects.length() - 1);
+        return getId() + ";" + getDefence() + ";" + getName() + ";" + effects;
     }
 }

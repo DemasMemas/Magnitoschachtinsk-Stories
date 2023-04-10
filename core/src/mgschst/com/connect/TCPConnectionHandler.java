@@ -95,6 +95,31 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                     GameScreen currentScreen = (GameScreen) game.getScreen();
                     currentScreen.updateEnemyVictoryPoints(Integer.parseInt(commandList.get(1)), commandList.get(2));
                 }
+                case "updateEnemyObjectiveDuration" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.updateEnemyObjectiveDuration(Integer.parseInt(commandList.get(1)));
+                }
+                case "removeKilledAlly" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.removeKilledAlly(Integer.parseInt(commandList.get(1)));
+                }
+                case "removeKilledEnemy" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.removeKilledEnemy(Integer.parseInt(commandList.get(1)));
+                }
+                case "changeEnemyPersonStatus" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.changeEnemyPersonStatus(Integer.parseInt(commandList.get(1)), commandList.get(2));
+                }
+                case "changeAllyPersonStatus" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.changeAllyPersonStatus(Integer.parseInt(commandList.get(1)), commandList.get(2));
+                }
+                case "updateDefenders" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.updateDefenders(Integer.parseInt(commandList.get(1)), commandList.get(2),
+                            Integer.parseInt(commandList.get(3)));
+                }
             }
         });
     }
