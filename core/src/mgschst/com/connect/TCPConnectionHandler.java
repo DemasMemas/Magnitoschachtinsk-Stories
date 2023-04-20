@@ -120,6 +120,14 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                     currentScreen.updateDefenders(Integer.parseInt(commandList.get(1)), commandList.get(2),
                             Integer.parseInt(commandList.get(3)));
                 }
+                case "updateStatuses" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.updateStatuses(commandList.get(1));
+                }
+                case "updateMinedUp" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.updateMinedUp(commandList.get(1));
+                }
             }
         });
     }

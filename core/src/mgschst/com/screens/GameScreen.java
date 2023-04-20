@@ -22,10 +22,7 @@ import mgschst.com.connect.DatabaseHandler;
 import mgschst.com.connect.TCPConnection;
 import mgschst.com.dbObj.Building.Building;
 import mgschst.com.dbObj.Card;
-import mgschst.com.dbObj.Equipment.AdditionalEquipment;
-import mgschst.com.dbObj.Equipment.Armor;
-import mgschst.com.dbObj.Equipment.Helmet;
-import mgschst.com.dbObj.Equipment.Weapon;
+import mgschst.com.dbObj.Equipment.*;
 import mgschst.com.dbObj.Objective;
 import mgschst.com.dbObj.People.ObjectivePerson;
 import mgschst.com.dbObj.People.Person;
@@ -79,6 +76,8 @@ public class GameScreen implements Screen {
 
     Card currentAttacker, currentDefender, currentEquip;
     Image attackerImage;
+
+    public int medBaySize = 1; int currentPeopleCountInMedBay = 0;
 
     public GameScreen(final MainMgschst game) {
         PreparedStatement preparedStatement;
@@ -452,7 +451,8 @@ public class GameScreen implements Screen {
         cardStage.addActor(addButton);
 
         if (currentCard.type.equals("equip_weapon") || currentCard.type.equals("equip_armor") ||
-                currentCard.type.equals("equip_helmet") || currentCard.type.equals("equip_heal")){
+                currentCard.type.equals("equip_helmet") || currentCard.type.equals("equip_heal")
+        || currentCard.type.equals("equip_add")){
             TextButton sellButton = new TextButton("Продать карту (Продайте две, чтобы получить поддержку)", game.getTextButtonStyle());
             sellButton.setPosition(125, 150);
             sellButton.addListener(new ChangeListener() {
@@ -536,18 +536,19 @@ public class GameScreen implements Screen {
     public void playCard(Card tempCard, Image tempImage){
         if (!checkPrice(tempCard, tempImage)) return;
         playerConn.sendString("cardFromHand," + game.getCurrentGameID() + "," + game.getCurrentUserName());
+        // убрать карту из руки
+        firstPlayerHand.removeActor(tempImage);
+        tempImage.getListeners().clear();
         if ((tempCard.type.equals("equip_weapon")||tempCard.type.equals("equip_helmet")||
                 tempCard.type.equals("equip_armor")||tempCard.type.equals("equip_heal")||
                 tempCard.type.equals("equip_add"))){
-            EffectHandler.handEffect(36, tempCard, game);
+            changeEquip(tempCard);
+            return;
         } else {
             if (tempCard.effects != null)
                 for(String effect:tempCard.effects.split(","))
                     EffectHandler.handEffect(Integer.parseInt(effect), tempCard, game);
         }
-        // убрать карту из руки
-        firstPlayerHand.removeActor(tempImage);
-        tempImage.getListeners().clear();
         endTurn();
     }
 
@@ -665,10 +666,10 @@ public class GameScreen implements Screen {
                         ArrayList<Integer> tempList = new ArrayList<>();
                         for (int i:tempPerson.getArmor().getEffect()) if (i != 12) tempList.add(i);
                         tempPerson.getArmor().setEffect(tempList.stream().mapToInt(i -> i).toArray());
-                        tempList = new ArrayList<>();
+                        tempList.clear();
                         for (int i:tempPerson.getHelmet().getEffect()) if (i != 12) tempList.add(i);
                         tempPerson.getHelmet().setEffect(tempList.stream().mapToInt(i -> i).toArray());
-                        tempList = new ArrayList<>();
+                        tempList.clear();
                         for (int i:tempPerson.getWeapon().getEffectList()) if (i != 12) tempList.add(i);
                         tempPerson.getWeapon().setEffectList(tempList.stream().mapToInt(i -> i).toArray());
 
@@ -679,8 +680,13 @@ public class GameScreen implements Screen {
                     } else {
                         switch (currentEquip.type){
                             case "equip_weapon" -> {
-                                if (currentEquip.card_id == 52){
+                                if (currentEquip.card_id == 52 || currentEquip.card_id == 51){
                                     // вернуть в руку оружие бойца
+                                }
+                                if (tempPerson.getHelmet().getId() == 29 && (currentEquip.card_id == 30 ||
+                                        currentEquip.card_id == 31)) {
+                                    useTurnLabel("Оружие не совместимо с шлемом бойца (Спецназ)");
+                                    return;
                                 }
                                 Weapon tempWeapon;
                                 try { tempWeapon = new Weapon(currentEquip.card_id, currentEquip.attack,
@@ -692,27 +698,30 @@ public class GameScreen implements Screen {
                                 tempPerson.setWeapon(tempWeapon);
                             }
                             case "equip_helmet" -> {
-                                Helmet tempHelmet;
-                                try { tempHelmet = new Helmet(currentEquip.card_id, currentEquip.defence,
-                                        currentEquip.name, Arrays.stream(currentEquip.effects.split(",")).mapToInt(Integer::parseInt).toArray());
-                                } catch (Exception e){
-                                    tempHelmet = new Helmet(currentEquip.card_id, currentEquip.defence,
-                                            currentEquip.name, new int[]{});
+                                if (currentEquip.card_id == 29 && (tempPerson.getWeapon().getId() == 30 ||
+                                        tempPerson.getWeapon().getId() == 31)) {
+                                    useTurnLabel("Шлем не совместим с оружем бойца (Снайперское)");
+                                    return;
                                 }
-                                tempPerson.setHelmet(tempHelmet);
+                                tempPerson.setHelmet(setNewProtectionEquip());
                             }
-                            case "equip_armor" -> {
-                                Armor tempArmor;
-                                try { tempArmor = new Armor(currentEquip.card_id, currentEquip.defence,
-                                        currentEquip.name, Arrays.stream(currentEquip.effects.split(",")).mapToInt(Integer::parseInt).toArray());
-                                } catch (Exception e){
-                                    tempArmor = new Armor(currentEquip.card_id, currentEquip.defence,
-                                            currentEquip.name, new int[]{});
-                                }
-                                tempPerson.setArmor(tempArmor);
-                            }
+                            case "equip_armor" -> tempPerson.setArmor(setNewProtectionEquip());
                             case "equip_heal" -> {
-                                // после статусов
+                                switch (currentEquip.card_id){
+                                    case 21 -> tempPerson.setBleeding(false);
+                                    case 22 -> {
+                                        if (tempPerson.isNotFractured()) tempPerson.setHealth(true);
+                                    }
+                                    case 23 -> {
+                                        if (tempPerson.isNotFractured()) tempPerson.setHealth(true);
+                                        tempPerson.setBleeding(false);
+                                    }
+                                    case 24 -> tempPerson.setFractured(false);
+                                    case 25 -> tempPerson.setOnPainkillers(true);
+                                }
+                                playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                                        "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
+                                        + tempPerson.getStatuses());
                             }
                             case "equip_add" -> {
                                 if (tempPerson.getFirstAddEquip().getId() == 0)
@@ -726,14 +735,27 @@ public class GameScreen implements Screen {
                     changeEquipActive = false;
                     repairActive = false;
                     card.person = tempPerson;
-                    playerConn.sendString("changeEnemyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
-                            "," + tempImage.getName() + "," + card.getPersonCard());
+                    playerConn.sendString("changeEnemyPersonStatus," + game.getCurrentGameID() + ","
+                            + game.getCurrentUserName() + "," + tempImage.getName() + "," + card.getPersonCard());
                     endTurn();
                 }
             }
         });
     }
+
+    private ProtectionEquip setNewProtectionEquip() {
+        ProtectionEquip tempEquip;
+        try { tempEquip = new ProtectionEquip(currentEquip.card_id, currentEquip.defence,
+                currentEquip.name, Arrays.stream(currentEquip.effects.split(",")).mapToInt(Integer::parseInt).toArray());
+        } catch (Exception e){
+            tempEquip = new ProtectionEquip(currentEquip.card_id, currentEquip.defence,
+                    currentEquip.name, new int[]{});
+        }
+        return tempEquip;
+    }
+
     public void spawnBuilding(Card card){
+        if (card.card_id == 50) medBaySize++;
         Image tempImage = addToPlayedCards(card);
         playerConn.sendString("playCard," + game.getCurrentGameID() + "," + game.getCurrentUserName() + "," +
                 "building," + card.getBuildingCard());
@@ -748,8 +770,7 @@ public class GameScreen implements Screen {
     public Image addToPlayedCards(Card card){
         // разместить карту на поле
         firstPlayerActiveCards.put(lastPlayedCardID, card);
-        Image tempImage = new Image(new Texture(
-                Gdx.files.internal("Cards/inGame/" + card.image_path)));
+        Image tempImage = new Image(new Texture(Gdx.files.internal("Cards/inGame/" + card.image_path)));
         tempImage.setName(String.valueOf(lastPlayedCardID));
         lastPlayedCardID++;
         firstPlayerField.addActor(tempImage);
@@ -849,24 +870,29 @@ public class GameScreen implements Screen {
         lastSecondPlayerPlayedCardID++;
         tempImage.addListener(new ClickListener(){
             public void clicked(InputEvent event, float x, float y){
-                if (isAttackActive) attack(tempCard, tempImage);
+                if (isAttackActive && !tempCard.person.isInMedBay()) attack(tempCard, tempImage);
+                else if (tempCard.person.isInMedBay()) useTurnLabel("Цель в медблоке!");
                 else startCardStage(tempCard, 600);
             }
         });
         secondPlayerField.addActor(tempImage);
+    }
+
+    public ProtectionEquip setProtectionEquip(String[] equipInfo){
+        ProtectionEquip equip;
+        try { equip = new ProtectionEquip(Integer.parseInt(equipInfo[0]), Integer.parseInt(equipInfo[1]),
+                equipInfo[2], Arrays.stream(equipInfo[3].split(":")).mapToInt(Integer::parseInt).toArray());
+        } catch (Exception e){
+            equip = new ProtectionEquip(Integer.parseInt(equipInfo[0]), Integer.parseInt(equipInfo[1]), equipInfo[2], new int[]{});
+        }
+        return equip;
     }
     
     public Person createEnemyPerson(String[] info){
         Person tempPerson = new Person();
 
         String[] armorInfo = info[1].split(";");
-        Armor tempArmor;
-        try { tempArmor = new Armor(Integer.parseInt(armorInfo[0]), Integer.parseInt(armorInfo[1]),
-                    armorInfo[2], Arrays.stream(armorInfo[3].split(":")).mapToInt(Integer::parseInt).toArray());
-        } catch (Exception e){
-            tempArmor = new Armor(Integer.parseInt(armorInfo[0]), Integer.parseInt(armorInfo[1]), armorInfo[2], new int[]{});
-        }
-        tempPerson.setArmor(tempArmor);
+        tempPerson.setArmor(setProtectionEquip(armorInfo));
 
         String[] weaponInfo = info[2].split(";");
         Weapon tempWeapon;
@@ -879,14 +905,7 @@ public class GameScreen implements Screen {
         tempPerson.setWeapon(tempWeapon);
 
         String[] helmetInfo = info[3].split(";");
-        Helmet tempHelmet;
-        try { tempHelmet = new Helmet(Integer.parseInt(helmetInfo[0]), Integer.parseInt(helmetInfo[1]),
-                helmetInfo[2], Arrays.stream(helmetInfo[3].split(":")).mapToInt(Integer::parseInt).toArray());
-        } catch (Exception e){
-            tempHelmet = new Helmet(Integer.parseInt(helmetInfo[0]), Integer.parseInt(helmetInfo[1]),
-                    helmetInfo[2], new int[]{});
-        }
-        tempPerson.setHelmet(tempHelmet);
+        tempPerson.setHelmet(setProtectionEquip(helmetInfo));
 
         String[] addEquipInfo = info[4].split(";");
         AdditionalEquipment tempFirstEquip;
@@ -937,6 +956,24 @@ public class GameScreen implements Screen {
             }
         }
 
+        if (secondPlayerField.getChildren().contains(tempImage, true)){
+            tempCard.person.setDoingAnAmbush(false);
+            playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                    "," + game.getCurrentUserName() + ",firstPlayer:" + tempImage.getName() + ":"
+                    + tempCard.person.getStatuses());
+        }
+        if (firstPlayerField.getChildren().contains(tempImage, true)){
+            playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                    "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
+                    + tempCard.person.getStatuses());
+        }
+        if (firstPlayerField.getChildren().contains(attackerImage, true)){
+            currentAttacker.person.setHitInHead(false);
+            playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                    "," + game.getCurrentUserName() + ",secondPlayer:" + attackerImage.getName() + ":"
+                    + currentAttacker.person.getStatuses());
+        }
+
         checkFiredUp(random, currentAttacker);
         attackerImage = null;
         isAttackActive = false;
@@ -950,18 +987,33 @@ public class GameScreen implements Screen {
                 for (Card card:tempBuilding.getDefenderList()){
                     for (int i:secondPlayerActiveCards.keySet()){
                         if (secondPlayerActiveCards.get(i).equals(card)){
-                            Image defenderImage = (Image) Arrays.stream(secondPlayerField.getChildren().items)
-                                    .filter(x -> x.getName().equals(String.valueOf(i))).findFirst().get();
-                            attackPeople(card, defenderImage, new Random());
+                            try {
+                                Image defenderImage = (Image) Arrays.stream(secondPlayerField.getChildren().items)
+                                        .filter(x -> x.getName().equals(String.valueOf(i))).findFirst().get();
+                                attackPeople(card, defenderImage, new Random());
+                            } catch (Exception ignored){}
                         }
                         if (!firstPlayerActiveCards.containsValue(currentAttacker)) return;
                     }
                 }
+            } else if (tempCard.building.isMinedUp()){
+                killEnemy(attackerImage);
+                tempCard.building.setMinedUp(false);
+                playerConn.sendString("updateMinedUp," + game.getCurrentGameID() +
+                        "," + game.getCurrentUserName() + ",firstPlayer:" + tempImage.getName() + ":0");
             } else changeBuildingHealthStatus(tempCard, tempImage);
         } catch (Exception ignored){
             if (tempCard.building.getDefenderList().size() == 0)
                 changeBuildingHealthStatus(tempCard, tempImage);
         }
+    }
+
+    public void updateMinedUp(String info){
+        String[] splittedInfo = info.split(":");
+        if (splittedInfo[0].equals("firstPlayer"))firstPlayerActiveCards.get(Integer.parseInt(splittedInfo[1]))
+                .building.setMinedUp(Integer.parseInt(splittedInfo[2]) == 1);
+        else secondPlayerActiveCards.get(Integer.parseInt(splittedInfo[1]))
+                .building.setMinedUp(Integer.parseInt(splittedInfo[2]) == 1);
     }
     public void changeBuildingHealthStatus(Card tempCard, Image tempImage){
         if (tempCard.building.isHealth()) tempCard.building.setHealth(false);
@@ -969,17 +1021,17 @@ public class GameScreen implements Screen {
     }
     public void attackPeople(Card tempCard, Image tempImage, Random random){
         if (!tempCard.person.isDefender() && !(currentAttacker.person.getWeapon().getId() == 51)
-                && !(currentAttacker.person.getWeapon().getId() == 52)){
+                && !(currentAttacker.person.getWeapon().getId() == 52) && !tempCard.person.isDoingAnAmbush()){
             // атаковать
             boolean noCounterAttack = addEquipCheck(tempCard, tempImage, random);
             attackEnemy(tempCard, tempImage, random, currentAttacker.person.getWeapon());
-
             if ((secondPlayerField.getChildren().contains(tempImage, true) ||
                     firstPlayerField.getChildren().contains(tempImage, true)) && noCounterAttack){
                 // обратная атака
                 attackEnemy(currentAttacker, attackerImage, random, tempCard.person.getWeapon());
             }
         } else {
+            if (tempCard.person.isDoingAnAmbush()) useTurnLabel("Засада!");
             // обратная атака
             attackEnemy(currentAttacker, attackerImage, random, tempCard.person.getWeapon());
             if (secondPlayerField.getChildren().contains(attackerImage, true) ||
@@ -1000,7 +1052,7 @@ public class GameScreen implements Screen {
             if (currentAttacker.person.getFirstAddEquip().getId() == 41
                     || currentAttacker.person.getFirstAddEquip().getId() == 42){
                 if (currentAttacker.person.getFirstAddEquip().getId() == 41){
-                    if (tempCard.person.isHealth() && random.nextBoolean()) tempCard.person.setHealth(false);
+                    if (tempCard.person.isNotWounded() && random.nextBoolean()) tempCard.person.setHealth(false);
                     else killEnemy(tempImage);
                 }
                 currentAttacker.person.setFirstAddEquip(new AdditionalEquipment(0, "Нет снаряжения"));
@@ -1014,7 +1066,7 @@ public class GameScreen implements Screen {
                 if (currentAttacker.person.getSecondAddEquip().getId() == 41
                         || currentAttacker.person.getSecondAddEquip().getId() == 42){
                     if (currentAttacker.person.getSecondAddEquip().getId() == 41){
-                        if (tempCard.person.isHealth() && random.nextBoolean()) tempCard.person.setHealth(false);
+                        if (tempCard.person.isNotWounded() && random.nextBoolean()) tempCard.person.setHealth(false);
                         else killEnemy(tempImage);
                     }
                     currentAttacker.person.setSecondAddEquip(new AdditionalEquipment(0, "Нет снаряжения"));
@@ -1040,6 +1092,7 @@ public class GameScreen implements Screen {
             int attackCounter = 1;
             if (effectList.contains(13)) attackCounter += 1;
             boolean hitToHead = effectList.contains(7) && random.nextInt(101) >= 25;
+            if (currentAttacker.person.getWeapon().equals(attackerWeapon) && currentAttacker.person.isHitInHead()) hitToHead = true;
             boolean instantKill = effectList.contains(11);
 
             for (int i = 0; i<attackCounter;i++) {
@@ -1075,51 +1128,66 @@ public class GameScreen implements Screen {
         return false;
     }
 
+    public ProtectionEquip attackProtectionEquip(Card tempCard, Weapon attackerWeapon, Image tempImage, String equipType){
+        ProtectionEquip defenderEquip = new ProtectionEquip(999, 0, "0", new int[]{});
+        if (equipType.equals("armor")) defenderEquip = tempCard.person.getArmor();
+        else if (equipType.equals("helmet")) defenderEquip = tempCard.person.getHelmet();
+        if (currentAttacker.person.getWeapon().equals(attackerWeapon)){
+            if (tempCard.person.isDefender()) defenderEquip.setDefence(defenderEquip.getDefence() + tempCard.defence);
+            if (defenderEquip.getDefence() >= attackerWeapon.getAttack() + currentAttacker.attack){
+                defenderEquip.setDefence(defenderEquip.getDefence() - attackerWeapon.getAttack() - currentAttacker.attack);
+                if (tempCard.person.isDefender()){
+                    if (defenderEquip.getDefence() >= tempCard.defence)
+                        defenderEquip.setDefence(defenderEquip.getDefence() - tempCard.defence);
+                    else defenderEquip.setDefence(0);
+                }
+            } else {
+                defenderEquip.setDefence(0);
+                if (tempCard.person.isOnPainkillers() && new Random().nextInt(101) >= 25) return new ProtectionEquip(999, 0, "0", new int[]{});
+                if (tempCard.person.isNotWounded()) checkOnInjuries (tempCard);
+                else {killEnemy(tempImage);return new ProtectionEquip(999, 0, "0", new int[]{});}
+            }
+        } else {
+            if (defenderEquip.getDefence() >= attackerWeapon.getAttack())
+                defenderEquip.setDefence(defenderEquip.getDefence() - attackerWeapon.getAttack());
+            else {
+                defenderEquip.setDefence(0);
+                if (tempCard.person.isNotWounded()) checkOnInjuries (tempCard);
+                else {killEnemy(tempImage);return new ProtectionEquip(999, 0, "0", new int[]{});}
+            }
+        }
+        return defenderEquip;
+    }
+
+    public void checkOnInjuries(Card tempCard){
+        Random random = new Random();
+        tempCard.person.setHealth(false);
+        int i = random.nextInt(10);
+        if (i == 8) tempCard.person.setFractured(true);
+        else if (i == 9) tempCard.person.setBleeding(true);
+    }
+
     public void attackArmor(Card tempCard, Weapon attackerWeapon, Image tempImage){
-        Armor defenderArmor = tempCard.person.getArmor();
-        if (tempCard.person.isDefender())
-            defenderArmor.setDefence(defenderArmor.getDefence() + tempCard.defence);
-        if (defenderArmor.getDefence() >= attackerWeapon.getAttack() + currentAttacker.attack){
-            defenderArmor.setDefence(defenderArmor.getDefence() - attackerWeapon.getAttack());
-            if (defenderArmor.getDefence() >= tempCard.defence && tempCard.person.isDefender())
-                defenderArmor.setDefence(defenderArmor.getDefence() - tempCard.defence);
-            else defenderArmor.setDefence(0);
+        tempCard.person.setArmor(attackProtectionEquip(tempCard, attackerWeapon, tempImage, "armor"));
+        if (tempCard.person.getArmor().getId() != 999){
+            if (firstPlayerActiveCards.containsValue(tempCard))
+                playerConn.sendString("changeEnemyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                        "," + tempImage.getName() + "," + tempCard.getPersonCard());
+            else if (secondPlayerActiveCards.containsValue(tempCard))
+                playerConn.sendString("changeAllyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                        "," + tempImage.getName() + "," + tempCard.getPersonCard());
         }
-        else {
-            defenderArmor.setDefence(0);
-            if (tempCard.person.isHealth()) tempCard.person.setHealth(false);
-            else {killEnemy(tempImage);return;}
-        }
-        tempCard.person.setArmor(defenderArmor);
-        if (firstPlayerActiveCards.containsValue(tempCard))
-            playerConn.sendString("changeEnemyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
-                    "," + tempImage.getName() + "," + tempCard.getPersonCard());
-        else if (secondPlayerActiveCards.containsValue(tempCard))
-            playerConn.sendString("changeAllyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
-                "," + tempImage.getName() + "," + tempCard.getPersonCard());
     }
     public void attackHead(Card tempCard, Weapon attackerWeapon, Image tempImage){
-        Helmet defenderHelmet = tempCard.person.getHelmet();
-        if (tempCard.person.isDefender())
-            defenderHelmet.setDefence(defenderHelmet.getDefence() + tempCard.defence);
-        if (defenderHelmet.getDefence() >= attackerWeapon.getAttack() + currentAttacker.attack){
-            defenderHelmet.setDefence(defenderHelmet.getDefence() - attackerWeapon.getAttack());
-            if (defenderHelmet.getDefence() >= tempCard.defence && tempCard.person.isDefender())
-                defenderHelmet.setDefence(defenderHelmet.getDefence() - tempCard.defence);
-            else defenderHelmet.setDefence(0);
+        tempCard.person.setHelmet(attackProtectionEquip(tempCard, attackerWeapon, tempImage, "helmet"));
+        if (tempCard.person.getHelmet().getId() != 999) {
+            if (firstPlayerActiveCards.containsValue(tempCard))
+                playerConn.sendString("changeEnemyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                        "," + tempImage.getName() + "," + tempCard.getPersonCard());
+            else if (secondPlayerActiveCards.containsValue(tempCard))
+                playerConn.sendString("changeAllyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                        "," + tempImage.getName() + "," + tempCard.getPersonCard());
         }
-        else {
-            defenderHelmet.setDefence(0);
-            if (tempCard.person.isHealth()) tempCard.person.setHealth(false);
-            else {killEnemy(tempImage);return;}
-        }
-        tempCard.person.setHelmet(defenderHelmet);
-        if (firstPlayerActiveCards.containsValue(tempCard))
-            playerConn.sendString("changeEnemyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
-                    "," + tempImage.getName() + "," + tempCard.getPersonCard());
-        else if (secondPlayerActiveCards.containsValue(tempCard))
-            playerConn.sendString("changeAllyPersonStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
-                "," + tempImage.getName() + "," + tempCard.getPersonCard());
     }
 
     public void killEnemy(Image tempImage){
@@ -1169,7 +1237,7 @@ public class GameScreen implements Screen {
         checkCardEffects();
         checkObjective();
         isAttackActive = false; isDefenceActive = false; currentDefender = null; currentAttacker = null;
-        repairActive = false; changeEquipActive = false; currentEquip = null;
+        repairActive = false; changeEquipActive = false; currentEquip = null; currentPeopleCountInMedBay = 0;
     }
 
     public void fillPersonCardStage(Card card, Image tempImage){
@@ -1215,7 +1283,15 @@ public class GameScreen implements Screen {
         medBayButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-
+                if (medBaySize > currentPeopleCountInMedBay && !card.person.isInMedBay()){
+                    currentPeopleCountInMedBay++;
+                    card.person.setInMedBay(true);
+                    playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                            "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
+                            + card.person.getStatuses());
+                } else useTurnLabel("Медблок полон");
+                isCardStageActive = false;
+                Gdx.input.setInputProcessor(stage);
             }
         });
         cardStage.addActor(medBayButton);
@@ -1418,20 +1494,23 @@ public class GameScreen implements Screen {
                     objectiveEnded = true;
                 }
                 case 54 -> {
-                    if (objectiveCard.building.getDefenderList().size() >= 3)
-                        objectiveEnded = endOfExpensiveCaseObjective();
-                    if (objectiveCard.building.getDefenderList().size() >= 1) {
-                        playerObjective.setDuration(playerObjective.getDuration() - 1);
-                        if (playerObjective.getDuration() == 0)
-                            objectiveEnded = endOfExpensiveCaseObjective();
-                    }
-                    if (objectiveCard.building.getDefenderList().size() == 0) playerObjective.setDuration(2);
                     if (!firstPlayerField.getChildren().contains(objectiveCardImage, true)){
                         playerObjective = new Objective(0);
                         stage.getActors().removeValue(objectiveImage, true);
                         failedObjective("normal");
                         objectiveEnded = true;
                     }
+                    if (objectiveCard.building.getDefenderList().size() >= 3)
+                        objectiveEnded = endOfExpensiveCaseObjective();
+                    if (objectiveCard.building.getDefenderList().size() >= 1) {
+                        playerObjective.setDuration(playerObjective.getDuration() - 1);
+                        if (objectiveCard.building.getDefenderList().stream().anyMatch(x -> x.card_id == 35 ||
+                                x.card_id == 36 ||  x.card_id == 37))
+                            playerObjective.setDuration(playerObjective.getDuration() - 1);
+                        if (playerObjective.getDuration() <= 0)
+                            objectiveEnded = endOfExpensiveCaseObjective();
+                    }
+                    if (objectiveCard.building.getDefenderList().size() == 0) playerObjective.setDuration(2);
                 }
                 case 55 -> {
                     if (firstPlayerActiveCards.containsValue(objectiveCard))
@@ -1495,12 +1574,47 @@ public class GameScreen implements Screen {
     }
 
     public void checkCardEffects(){
+        ArrayList<Integer> killList = new ArrayList<>();
         for (Card card:firstPlayerActiveCards.values()){
-            try {card.person.setFought(false);
+            int cardID = 0;
+            for (int i:firstPlayerActiveCards.keySet()) if (firstPlayerActiveCards.get(i).equals(card)) {cardID = i;break;}
+            try {Person tempPerson = card.person;
+                tempPerson.setFought(false);
+                if (tempPerson.isInMedBay()){
+                    tempPerson.setInMedBay(false);
+                    tempPerson.setBleeding(false);
+                    tempPerson.setFractured(false);
+                    tempPerson.setHealth(true);
+                }
+                tempPerson.setOnPainkillers(false);
+                if (tempPerson.isBleeding()){
+                    if (tempPerson.isNotWounded()) tempPerson.setHealth(false);
+                    else killList.add(cardID);
+                    tempPerson.setBleeding(false);
+                }
+                card.person = tempPerson;
+                if (!killList.contains(cardID)) playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                        "," + game.getCurrentUserName() + ",secondPlayer:" + cardID + ":" + tempPerson.getStatuses());
             } catch (Exception ignored){}
             try {card.building.setAlreadyUsed(false);
             } catch (Exception ignored){}
         }
+        for (int i:killList) killEnemy((Image) firstPlayerField.getChildren().get(i));
+    }
+
+    public void updateStatuses(String info){
+        String[] splittedInfo = info.split(":");
+        Card tempCard;
+        if (splittedInfo[0].equals("firstPlayer")) tempCard = firstPlayerActiveCards.get(Integer.parseInt(splittedInfo[1]));
+        else tempCard = secondPlayerActiveCards.get(Integer.parseInt(splittedInfo[1]));
+        ArrayList<Integer> statusList = new ArrayList<>();
+        statusList.add(Integer.parseInt(splittedInfo[2]));
+        statusList.add(Integer.parseInt(splittedInfo[3]));
+        statusList.add(Integer.parseInt(splittedInfo[4]));
+        statusList.add(Integer.parseInt(splittedInfo[5]));
+        statusList.add(Integer.parseInt(splittedInfo[6]));
+        statusList.add(Integer.parseInt(splittedInfo[7]));
+        tempCard.person.setStatuses(statusList);
     }
 
     public void successfulObjective(String toughness){
@@ -1535,6 +1649,7 @@ public class GameScreen implements Screen {
 
     public void removeKilledAlly(int id){
         try{
+            if (firstPlayerActiveCards.get(id).card_id == 50 && medBaySize > 1) medBaySize--;
             firstPlayerActiveCards.remove(id);
             firstPlayerField.removeActor(Arrays.stream(firstPlayerField.getChildren().toArray())
                     .filter(x -> x.getName().equals(String.valueOf(id))).findFirst().get());

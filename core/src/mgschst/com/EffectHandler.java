@@ -47,10 +47,6 @@ public class EffectHandler {
         effectMap.put(15, "objective");
         effectMap.put(16, "Ваш боец при атаке учитывает только защиту шлема противника и гарантированно попадает");
         effectMap.put(17, "При атаке на ваше сооружение один из атакующих умирает, теряя все снаряжение");
-        effectMap.put(18, "Останавливает кровотечение");
-        effectMap.put(19, "Лечит из ранен в цел");
-        effectMap.put(20, "18 и 19 эффект");
-        effectMap.put(21, "Отменяет перелом");
         effectMap.put(22, "75% шанс отменить ранение до конца раунда");
         effectMap.put(23, "В конце раунда боец умирает, если был ранен, или становится ранен, если был цел");
         effectMap.put(24, "Боец не может иметь статус здоровья лучше чем ранен");
@@ -65,7 +61,6 @@ public class EffectHandler {
         effectMap.put(33, "people,army_spec-ops_ru,Вызов бойца спецназа РФ");
         effectMap.put(34, "people,army_patrol_ru,Вызов патрульного военного РФ");
         effectMap.put(35, "people,army_ru,Вызов военного РФ");
-        effectMap.put(36, "equip");
         effectMap.put(37, "Выдача 2 случайных медикаментов");
         effectMap.put(38, "Выдача 4 случайных медикаментов");
         effectMap.put(39, "Один человек становится неактивен. Вы получаете 2 карты случайного снаряжения");
@@ -107,16 +102,9 @@ public class EffectHandler {
                     }
                 }
             }
-            case "equip" -> {
-                GameScreen currentScreen = (GameScreen) game.getScreen();
-                currentScreen.changeEquip(tempCard);
-            }
             case "objective" -> {
                 GameScreen currentScreen = (GameScreen) game.getScreen();
                 currentScreen.setNewObjective(new Objective(tempCard.card_id));
-            }
-            case "action" -> {
-//j
             }
             case "building" -> spawnBuilding(new Building(tempCard.card_id), game);
             case "people" -> {

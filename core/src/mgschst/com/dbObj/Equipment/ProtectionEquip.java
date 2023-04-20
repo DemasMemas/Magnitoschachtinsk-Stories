@@ -1,13 +1,13 @@
 package mgschst.com.dbObj.Equipment;
 
-public class Helmet{
+public class ProtectionEquip {
     private int id;
     private int defence;
     private final int maxDefence;
     private final String name;
     private int[] effectList;
 
-    public Helmet(int id, int defence, String name, int[] effect) {
+    public ProtectionEquip(int id, int defence, String name, int[] effect) {
         this.id = id;
         this.maxDefence = defence;
         this.defence = maxDefence;
@@ -35,17 +35,22 @@ public class Helmet{
         this.effectList = effect;
     }
 
-    public int getId() { return id; }
+    public int getId() {
+        return id;
+    }
 
-    public void setId(int id) { this.id = id; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getMaxDefence() {
         return maxDefence;
     }
+
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder effects = new StringBuilder();
-        for (int i:getEffect())
+        for (int i : getEffect())
             effects.append(i).append(":");
         if (effects.length() > 0) effects.deleteCharAt(effects.length() - 1);
         return getId() + ";" + getDefence() + ";" + getName() + ";" + effects;

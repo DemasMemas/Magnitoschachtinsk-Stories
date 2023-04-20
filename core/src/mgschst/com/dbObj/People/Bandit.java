@@ -1,7 +1,6 @@
 package mgschst.com.dbObj.People;
 
-import mgschst.com.dbObj.Equipment.Armor;
-import mgschst.com.dbObj.Equipment.Helmet;
+import mgschst.com.dbObj.Equipment.ProtectionEquip;
 import mgschst.com.dbObj.Equipment.Weapon;
 
 import java.util.Random;
@@ -27,8 +26,8 @@ public class Bandit extends Person{
 
     public void randomizeArmor(){
         switch (random.nextInt(2)){
-            case 0 -> armor = new Armor(9, 2, "Полицейский бронежилет", new int[]{});
-            case 1 -> armor = new Armor(10, 3, "Бронежилет \"Пресса\"", new int[]{});
+            case 0 -> armor = new ProtectionEquip(9, 2, "Полицейский бронежилет", new int[]{});
+            case 1 -> armor = new ProtectionEquip(10, 3, "Бронежилет \"Пресса\"", new int[]{});
         }
     }
 
@@ -42,8 +41,8 @@ public class Bandit extends Person{
 
     public void randomizeHelmet(){
         switch (random.nextInt(8)){
-            case 7 -> helmet = new Helmet(27,2,"Общевойсковой шлем", new int[]{});
-            case 5,6 -> helmet = new Helmet(26, 1, "Полицейский шлем", new int[]{});
+            case 7 -> helmet = new ProtectionEquip(27,2,"Общевойсковой шлем", new int[]{});
+            case 5,6 -> helmet = new ProtectionEquip(26, 1, "Полицейский шлем", new int[]{});
         }
     }
 }

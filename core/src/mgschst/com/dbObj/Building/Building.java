@@ -9,17 +9,14 @@ public class Building {
         return id;
     }
     int id;
-    int defenceBonus;
+    int defenceBonus = 0;
     boolean health = true;
     ArrayList<Card> defenderList = new ArrayList<>();
     boolean alreadyUsed = false;
+    boolean minedUp = false;
     public Building(int id){
         this.id = id;
-        defenceBonus = 0;
         switch (id) {
-            case 5 -> {
-                // верстак, добавить возможность чинить
-            }
             case 47 -> {
                 defenceBonus = 1;
                 // налетная, добавить выдачу снаряжения
@@ -28,12 +25,6 @@ public class Building {
                     defenceBonus = 2;
             case 53-> {
                 // разведцентр, добавить выдачу целей
-            }
-            case 50-> {
-                // медблок, расширить на 1
-            }
-            case 54 -> {
-                // ценный груз, цель
             }
         }
     }
@@ -60,5 +51,11 @@ public class Building {
     }
     public void setAlreadyUsed(boolean alreadyUsed) {
         this.alreadyUsed = alreadyUsed;
+    }
+    public boolean isMinedUp() {
+        return minedUp;
+    }
+    public void setMinedUp(boolean minedUp) {
+        this.minedUp = minedUp;
     }
 }

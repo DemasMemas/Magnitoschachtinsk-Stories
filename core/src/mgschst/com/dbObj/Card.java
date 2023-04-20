@@ -70,7 +70,7 @@ public class Card {
     public String getPersonCard(){
         return card_id + " . " + person.getArmorString() + " . " + person.getWeaponString() + " . "
                 + person.getHelmetString() + " . " + person.firstEquipString() + " . " + person.secondEquipString()
-                + " . " + (person.isHealth() ? "1" : "0");
+                + " . " + (person.isNotWounded() ? "1" : "0");
     }
     public String getBuildingCard(){
         return String.valueOf(card_id);
