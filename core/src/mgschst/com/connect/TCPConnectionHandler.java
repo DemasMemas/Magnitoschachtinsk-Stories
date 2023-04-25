@@ -128,6 +128,14 @@ public class TCPConnectionHandler implements TCPConnectionListener {
                     GameScreen currentScreen = (GameScreen) game.getScreen();
                     currentScreen.updateMinedUp(commandList.get(1));
                 }
+                case "sendEndStatus" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.sendEndStatus();
+                }
+                case "endScreen" -> {
+                    GameScreen currentScreen = (GameScreen) game.getScreen();
+                    currentScreen.startEndScreen(commandList.get(1));
+                }
             }
         });
     }

@@ -17,15 +17,10 @@ public class Building {
     public Building(int id){
         this.id = id;
         switch (id) {
-            case 47 -> {
-                defenceBonus = 1;
-                // налетная, добавить выдачу снаряжения
-            }
+            case 47 ->
+                    defenceBonus = 1;
             case 48 -> // склад
                     defenceBonus = 2;
-            case 53-> {
-                // разведцентр, добавить выдачу целей
-            }
         }
     }
     public int getDefenceBonus() {

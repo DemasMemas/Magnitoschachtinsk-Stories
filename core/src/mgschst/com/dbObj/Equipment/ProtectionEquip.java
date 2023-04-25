@@ -1,7 +1,7 @@
 package mgschst.com.dbObj.Equipment;
 
 public class ProtectionEquip {
-    private int id;
+    private final int id;
     private int defence;
     private final int maxDefence;
     private final String name;
@@ -10,7 +10,7 @@ public class ProtectionEquip {
     public ProtectionEquip(int id, int defence, String name, int[] effect) {
         this.id = id;
         this.maxDefence = defence;
-        this.defence = maxDefence;
+        this.defence = defence;
         this.name = name;
         this.effectList = effect;
     }
@@ -19,8 +19,8 @@ public class ProtectionEquip {
         return defence;
     }
 
-    public void setDefence(int defence) {
-        this.defence = defence;
+    public void setDefence(int newDefence) {
+        this.defence = newDefence;
     }
 
     public String getName() {
@@ -37,10 +37,6 @@ public class ProtectionEquip {
 
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public int getMaxDefence() {

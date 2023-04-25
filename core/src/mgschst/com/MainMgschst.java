@@ -74,6 +74,46 @@ public class MainMgschst extends Game {
         parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
         parameter.characters = charactersFont;
         parameter.size = 24;
+        setFontsAndStyles(generator, parameter);
+
+        playMenuMusic();
+
+        AuthorizationScreen auS = new AuthorizationScreen(this);
+
+        if (xScaler != 1 || yScaler != 1){
+            float fontScaler = (xScaler + yScaler) / 2;
+            generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (40 * fontScaler);
+            parameter.borderWidth = 5;
+            mainFont = generator.generateFont(parameter);
+
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (16 * fontScaler);
+            parameter.borderWidth = 2;
+            parameter.color = new Color(0, 1, 0, 1);
+            chosenFont = generator.generateFont(parameter);
+
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (14 * fontScaler);
+            parameter.borderWidth = 2;
+            smallFont = generator.generateFont(parameter);
+
+            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            parameter.characters = charactersFont;
+            parameter.size = (int) (24 * fontScaler);
+            setFontsAndStyles(generator, parameter);
+
+            auS = new AuthorizationScreen(this);
+        }
+
+        this.setScreen(auS);
+    }
+
+    private void setFontsAndStyles(FreeTypeFontGenerator generator, FreeTypeFontGenerator.FreeTypeFontParameter parameter) {
         parameter.borderWidth = 2;
         normalFont = generator.generateFont(parameter);
         generator.dispose();
@@ -107,75 +147,6 @@ public class MainMgschst extends Game {
 
         dialogWindowStyle = new Window.WindowStyle();
         dialogWindowStyle.titleFont = mainFont;
-
-        playMenuMusic();
-
-        AuthorizationScreen auS = new AuthorizationScreen(this);
-
-
-        if (xScaler != 1 || yScaler != 1){
-            float fontScaler = (xScaler + yScaler) / 2;
-            generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/jura.ttf"));
-            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.characters = charactersFont;
-            parameter.size = (int) (40 * fontScaler);
-            parameter.borderWidth = 5;
-            mainFont = generator.generateFont(parameter);
-
-            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.characters = charactersFont;
-            parameter.size = (int) (16 * fontScaler);
-            parameter.borderWidth = 2;
-            parameter.color = new Color(0, 1, 0, 1);
-            chosenFont = generator.generateFont(parameter);
-
-            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.characters = charactersFont;
-            parameter.size = (int) (14 * fontScaler);
-            parameter.borderWidth = 2;
-            smallFont = generator.generateFont(parameter);
-
-            parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.characters = charactersFont;
-            parameter.size = (int) (24 * fontScaler);
-            parameter.borderWidth = 2;
-            normalFont = generator.generateFont(parameter);
-            generator.dispose();
-
-            textButtonStyle = new TextButton.TextButtonStyle();
-            textButtonStyle.font = mainFont;
-
-            textFieldStyle = new TextField.TextFieldStyle();
-            textFieldStyle.font = mainFont;
-            textFieldStyle.fontColor = mainFont.getColor();
-
-            chosenLabelStyle = new Label.LabelStyle();
-            chosenLabelStyle.font = chosenFont;
-            chosenLabelStyle.fontColor = chosenFont.getColor();
-
-            smallLabelStyle = new Label.LabelStyle();
-            smallLabelStyle.font = smallFont;
-            smallLabelStyle.fontColor = smallFont.getColor();
-
-            normalLabelStyle = new Label.LabelStyle();
-            normalLabelStyle.font = normalFont;
-            normalLabelStyle.fontColor = normalFont.getColor();
-
-            mainLabelStyle = new Label.LabelStyle();
-            mainLabelStyle.font = mainFont;
-            mainLabelStyle.fontColor = chosenFont.getColor();
-
-            chosenMainLabelStyle = new Label.LabelStyle();
-            chosenMainLabelStyle.font = mainFont;
-            chosenMainLabelStyle.fontColor = new Color(0, 1, 0, 1);
-
-            dialogWindowStyle = new Window.WindowStyle();
-            dialogWindowStyle.titleFont = mainFont;
-
-            auS = new AuthorizationScreen(this);
-        }
-
-        this.setScreen(auS);
     }
 
     @Override
@@ -250,7 +221,7 @@ public class MainMgschst extends Game {
 
     public void recreatePlayerConnection(){ try {
         if (playerConnection == null)
-        playerConnection = new TCPConnection(new TCPConnectionHandler(this), "127.0.0.1", 8080);
+            playerConnection = new TCPConnection(new TCPConnectionHandler(this), "127.0.0.1", 8080);
     } catch (Exception e) {
         e.printStackTrace();
     }}
@@ -259,7 +230,6 @@ public class MainMgschst extends Game {
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal
                 ("Music/menuMusic" + random.nextInt(7) + ".mp3"));
         menuMusic.play();
-        //menuMusic.setVolume(0.15f);
-        menuMusic.setVolume(0f);
+        menuMusic.setVolume(0.15f);
     }
 }

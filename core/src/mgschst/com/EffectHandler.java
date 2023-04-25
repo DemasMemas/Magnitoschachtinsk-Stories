@@ -31,7 +31,7 @@ public class EffectHandler {
 
     public static void fillMap(){
         effectMap.put(1, "spawn,bandit,2,Призыв 2 случайных бандитов");
-        effectMap.put(2, "Призыв 2 случайных образцов русского вооружения");
+        effectMap.put(2, "summon_equip,weapon,2,Призыв 2 случайных образцов русского вооружения");
         effectMap.put(3, "people,bandit,Вызов стандартного бандита");
         effectMap.put(4, "people,bandit_attack,Вызов бандита-налётчика");
         effectMap.put(5, "people,bandit_defence,Вызов бандита-патрульного");
@@ -61,8 +61,8 @@ public class EffectHandler {
         effectMap.put(33, "people,army_spec-ops_ru,Вызов бойца спецназа РФ");
         effectMap.put(34, "people,army_patrol_ru,Вызов патрульного военного РФ");
         effectMap.put(35, "people,army_ru,Вызов военного РФ");
-        effectMap.put(37, "Выдача 2 случайных медикаментов");
-        effectMap.put(38, "Выдача 4 случайных медикаментов");
+        effectMap.put(37, "summon_heal,any,2,Выдача 2 случайных медикаментов");
+        effectMap.put(38, "summon_heal,good,4,Выдача 4 случайных медикаментов");
         effectMap.put(39, "Один человек становится неактивен. Вы получаете 2 карты случайного снаряжения");
         effectMap.put(40, "Два человека становятся неактивны. Вы получаете 3 карты случайного хорошего снаряжения. Шанс 25%, что боец с самой низкой защитой умрет");
         effectMap.put(42, "Если у цели атаки - огнестрельное оружие, она атакует первой");
@@ -81,9 +81,6 @@ public class EffectHandler {
                         for (int i = 0; i < Integer.parseInt(commandList[2]); i++)
                             spawnPeople(new MercRu(), game);
                     }
-                    case "mercenary_eu" -> {
-                        // пока что нет
-                    }
                     case "army_ru" -> {
                         for (int i = 0; i < Integer.parseInt(commandList[2]); i++){
                             int id = 0;
@@ -96,9 +93,6 @@ public class EffectHandler {
                             }
                             spawnPeople(new ArmyRu(id), game);
                         }
-                    }
-                    case "army_eu" -> {
-                        // пока что нет 2
                     }
                 }
             }
@@ -119,9 +113,32 @@ public class EffectHandler {
                     case "army_ru" -> spawnPeople(new ArmyRu(34), game);
                 }
             }
+            case "summon_heal" -> {
+                Random random  = new Random();
+                int number = random.nextInt(58);
+                int minimumRareness = 1;
+                if (commandList[1].equals("good")) minimumRareness = 2;
+                for (int i = 0; i < Integer.parseInt(commandList[2]);i++){
+                    while (number == 0 || !(getCardByID(number).type.contains("equip_heal") && getCardByID(number).rareness >= minimumRareness))
+                        number = random.nextInt(58);
+                    takeCardNotFromDeck(number, game);
+                }
+            }
+            case "summon_equip" -> {
+                Random random  = new Random();
+                int number = random.nextInt(58);
+                for (int i = 0; i < Integer.parseInt(commandList[2]);i++){
+                    while (number == 0 || !getCardByID(number).type.contains("equip_" + commandList[1]))
+                        number = random.nextInt(58);
+                    takeCardNotFromDeck(number, game);
+                }
+            }
         }
     }
-
+    public static void takeCardNotFromDeck(int id, final MainMgschst game){
+        GameScreen currentScreen = (GameScreen) game.getScreen();
+        currentScreen.takeCardNotFromDeck(id);
+    }
     public static void spawnPeople(Person person, final MainMgschst game){
         Card tempCard = getCardByID(person.getId());
         if (tempCard != null) tempCard.person = person;

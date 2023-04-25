@@ -10,12 +10,9 @@ public class ObjectivePerson extends Person {
                 id = 55;
                 armor = new ProtectionEquip(11, 4, "Бронежилет АТРАВМ", new int[]{});
                 weapon = new Weapon(8, 2, "АКМ", new int[]{13});
+                helmet = new ProtectionEquip(27, 2, "Общевойсковой шлем", new int[]{});
             }
-            case 56 -> {
-                id = 56;
-                armor = new ProtectionEquip(0, 0, "Нет брони", new int[]{});
-                weapon = new Weapon(0, 0, "Нет оружия", new int[]{});
-            }
+            case 56 -> id = 56;
         }
     }
 }

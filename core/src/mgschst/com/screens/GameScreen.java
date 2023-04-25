@@ -59,7 +59,8 @@ public class GameScreen implements Screen {
     HorizontalGroup firstPlayerHand  = new HorizontalGroup(), secondPlayerHand = new HorizontalGroup();
     boolean myTurn = false;
     Stage cardStage = new Stage();
-    Boolean isCardStageActive = false, isAttackActive = false, isDefenceActive = false, repairActive = false, changeEquipActive = false;
+    Boolean isCardStageActive = false, isAttackActive = false, isDefenceActive = false, repairActive = false,
+            changeEquipActive = false, performingPersonAction = false, performingBuildingAction = false;
     HorizontalGroup firstPlayerField = new HorizontalGroup(), secondPlayerField = new HorizontalGroup();
     HashMap<Integer, Card> firstPlayerActiveCards = new HashMap<>();
     HashMap<Integer, Card> secondPlayerActiveCards = new HashMap<>();
@@ -74,10 +75,14 @@ public class GameScreen implements Screen {
     Card objectiveCard;
     int objectiveCardID;
 
-    Card currentAttacker, currentDefender, currentEquip;
+    Card currentAttacker, currentDefender, currentEquip, currentAction;
     Image attackerImage;
 
     public int medBaySize = 1; int currentPeopleCountInMedBay = 0;
+    int baseRaidCardCounter = 0;
+
+    Stage statusStage = new Stage();
+    boolean isStatusStageActive = false;
 
     public GameScreen(final MainMgschst game) {
         PreparedStatement preparedStatement;
@@ -151,6 +156,10 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         DeckBuildingScreen.renderScreenWithCardStage(game, camera, batch, stage, isCardStageActive, cardStage);
+        if (isStatusStageActive){
+            statusStage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 60f));
+            statusStage.draw();
+        }
     }
 
     @Override public void resize(int width, int height) { }
@@ -343,8 +352,18 @@ public class GameScreen implements Screen {
         stage.addActor(turnLabel);
         useTurnLabel("Игру начинает: " + player);
 
-        for (int i = 0; i < 7; i++)
-            playerConn.sendString("takeCard," + game.getCurrentGameID() + ","+game.getCurrentUserName());
+        playerConn.sendString("takeCardWithType," + game.getCurrentGameID() + "," +
+                game.getCurrentUserName() + ",objective");
+        playerConn.sendString("takeCardWithType," + game.getCurrentGameID() + "," +
+                game.getCurrentUserName() + ",objective");
+        playerConn.sendString("takeCardWithType," + game.getCurrentGameID() + "," +
+                game.getCurrentUserName() + ",people");
+        playerConn.sendString("takeCardWithType," + game.getCurrentGameID() + "," +
+                game.getCurrentUserName() + ",people");
+        playerConn.sendString("takeCardWithType," + game.getCurrentGameID() + "," +
+                game.getCurrentUserName() + ",building");
+        playerConn.sendString("takeCard," + game.getCurrentGameID() + "," + game.getCurrentUserName());
+        playerConn.sendString("takeCard," + game.getCurrentGameID() + "," + game.getCurrentUserName());
 
         if (player.equals(game.getCurrentUserName())) takeTurn();
     }
@@ -402,12 +421,22 @@ public class GameScreen implements Screen {
                         ||(tempCard.type.equals("objective")&&tempCard.card_id != 6)))
         {useTurnLabel("Нельзя разыграть больше карт");return false;}
 
-        // Проверка на наличие людей на карте
-        if ((tempCard.type.equals("equip_weapon")||tempCard.type.equals("equip_helmet")||
+        // Проверка на наличие людей на поле
+        if (((tempCard.type.equals("equip_weapon")||tempCard.type.equals("equip_helmet")||
                 tempCard.type.equals("equip_armor")||tempCard.type.equals("equip_heal")||
-                tempCard.type.equals("equip_add"))&&
+                tempCard.type.equals("equip_add")) || (tempCard.type.equals("action") && tempCard.card_id != 20))&&
                 firstPlayerActiveCards.values().stream().noneMatch(x -> x.type.equals("people"))){
             useTurnLabel("Нет активных людей для использования");return false;}
+
+        // Проверка на наличие достаточного количества людей на поле
+        if (tempCard.card_id == 46 && firstPlayerActiveCards.values().stream().filter(x -> x.type.equals("people")
+                && x.person.getFoughtStatus().equals("0")).count() < 2){
+            useTurnLabel("Нет активных людей для использования");return false;}
+
+        // Проверка на наличие зданий на поле
+        if (tempCard.card_id == 20 &&
+                firstPlayerActiveCards.values().stream().noneMatch(x -> x.type.equals("building"))){
+            useTurnLabel("Нет активных зданий для использования");return false;}
 
         // Проверка на наличие активной цели
         if (tempCard.type.equals("objective")&&!playerObjective.equals(0)){
@@ -544,12 +573,22 @@ public class GameScreen implements Screen {
                 tempCard.type.equals("equip_add"))){
             changeEquip(tempCard);
             return;
-        } else {
+        } else if (tempCard.type.equals("action")){
+            performAction(tempCard);
+            return;
+        }
+        else {
             if (tempCard.effects != null)
                 for(String effect:tempCard.effects.split(","))
                     EffectHandler.handEffect(Integer.parseInt(effect), tempCard, game);
         }
         endTurn();
+    }
+
+    public void performAction(Card tempCard){
+        if (tempCard.card_id != 20) performingPersonAction = true;
+        else performingBuildingAction = true;
+        currentAction = tempCard;
     }
 
     public void changeEquip(Card tempCard){
@@ -656,8 +695,76 @@ public class GameScreen implements Screen {
                 "person," + card.getPersonCard());
         tempImage.addListener(new ClickListener(){
             @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor){
+                if (card.person.getStatuses().contains("1") || card.person.isDefender() || !card.person.isNotWounded()
+                || card.person.getFoughtStatus().equals("1")){
+                    statusStage = new Stage();
+                    Image bg = new Image(new Texture(Gdx.files.internal("Cards/statusIcons/status_bg.png")));
+                    bg.setPosition(360, 475);
+                    statusStage.addActor(bg);
+
+                    Table statusTable = new Table();
+                    statusTable.row();
+                    statusTable.setPosition(360, 475);
+                    statusTable.center();
+                    statusTable.setBounds(380, 495, 560, 360);
+                    if (card.person.isInMedBay()){
+                        statusTable.add(new Label("В медблоке ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/medbay.png"))));
+                        statusTable.row();
+                    }
+                    if (!card.person.isNotWounded()){
+                        statusTable.add(new Label("Ранен ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/wounded.png"))));
+                        statusTable.row();
+                    }
+                    if (card.person.getFoughtStatus().equals("1")){
+                        statusTable.add(new Label("Отстрелялся ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/exhaust.png"))));
+                        statusTable.row();
+                    }
+                    if (card.person.isDefender()){
+                        statusTable.add(new Label("В обороне ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/defender.png"))));
+                        statusTable.row();
+                    }
+                    if (card.person.isBleeding()){
+                        statusTable.add(new Label("Кровоточит ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/bleeding.png"))));
+                        statusTable.row();
+                    }
+                    if (!card.person.isNotFractured()){
+                        statusTable.add(new Label("Перелом ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/fractured.png"))));
+                        statusTable.row();
+                    }
+                    if (card.person.isOnPainkillers()){
+                        statusTable.add(new Label("Принял обезболивающее ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/painKillers.png"))));
+                        statusTable.row();
+                    }
+                    if (card.person.isHitInHead()){
+                        statusTable.add(new Label("Прицелился в голову ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/hitInHead.png"))));
+                        statusTable.row();
+                    }
+                    if (card.person.isDoingAnAmbush()){
+                        statusTable.add(new Label("Находится в засаде ", game.getNormalLabelStyle()));
+                        statusTable.add(new Image(new Texture(Gdx.files.internal("Cards/statusIcons/ambush.png"))));
+                        statusTable.row();
+                    }
+                    statusStage.addActor(statusTable);
+
+                    isStatusStageActive = true;
+                }
+            }
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor){
+                isStatusStageActive = false;
+            }
+            @Override
             public void clicked(InputEvent event, float x, float y){
-                if (!repairActive && !changeEquipActive) fillPersonCardStage(card, tempImage);
+                if (!repairActive && !changeEquipActive && !performingPersonAction) fillPersonCardStage(card, tempImage);
                 else {
                     Person tempPerson = card.person;
                     if (repairActive){
@@ -677,12 +784,11 @@ public class GameScreen implements Screen {
                             tempPerson.setFirstAddEquip(new AdditionalEquipment(39, "Глушитель"));
                         if (tempPerson.getSecondAddEquip().getId() == 38)
                             tempPerson.setSecondAddEquip(new AdditionalEquipment(39, "Глушитель"));
-                    } else {
+                    } else if (changeEquipActive){
                         switch (currentEquip.type){
                             case "equip_weapon" -> {
-                                if (currentEquip.card_id == 52 || currentEquip.card_id == 51){
-                                    // вернуть в руку оружие бойца
-                                }
+                                if (currentEquip.card_id == 52 || currentEquip.card_id == 51)
+                                    takeCardNotFromDeck(tempPerson.getWeapon().getId());
                                 if (tempPerson.getHelmet().getId() == 29 && (currentEquip.card_id == 30 ||
                                         currentEquip.card_id == 31)) {
                                     useTurnLabel("Оружие не совместимо с шлемом бойца (Спецназ)");
@@ -731,7 +837,76 @@ public class GameScreen implements Screen {
                                 else tempPerson.setFirstAddEquip(new AdditionalEquipment(currentEquip.card_id, currentEquip.name));
                             }
                         }
+                    } else {
+                        switch (currentAction.card_id){
+                            case 18 -> tempPerson.setDoingAnAmbush(true);
+                            case 19 -> tempPerson.setHitInHead(true);
+                            case 49 -> {
+                                if (tempPerson.getArmor().getId() != 14) tempPerson.setFought(false);
+                                else {
+                                    useTurnLabel("Слишком тяжелая броня");
+                                    return;
+                                }
+                            }
+                            case 45 -> {
+                                if (tempPerson.getFoughtStatus().equals("0")){
+                                    tempPerson.setFought(true);
+                                    Random random  = new Random();
+                                    int number = random.nextInt(58);
+                                    while (number == 0 || !getCardByID(number).type.contains("equip_"))
+                                        number = random.nextInt(58);
+                                    takeCardNotFromDeck(number);
+                                    number = random.nextInt(58);
+                                    while (number == 0 || !getCardByID(number).type.contains("equip_"))
+                                        number = random.nextInt(58);
+                                    takeCardNotFromDeck(number);
+                                }
+                                else {
+                                    useTurnLabel("Этот человек уже отстрелялся");
+                                    return;
+                                }
+                            }
+                            case 46 -> {
+                                if (tempPerson.getFoughtStatus().equals("0")){
+                                    tempPerson.setFought(true);
+                                    baseRaidCardCounter++;
+                                    if (baseRaidCardCounter == 2){
+                                        baseRaidCardCounter = 0;
+                                        if (new Random().nextInt(101) >= 90) killEnemy(tempImage);
+                                        // дать четыре хорошие карты
+                                        Random random  = new Random();
+                                        int number = random.nextInt(58);
+                                        while (number == 0 || !(getCardByID(number).type.contains("equip_") && getCardByID(number).rareness < 2))
+                                            number = random.nextInt(58);
+                                        takeCardNotFromDeck(number);
+                                        number = random.nextInt(58);
+                                        while (number == 0 || !(getCardByID(number).type.contains("equip_") && getCardByID(number).rareness < 2))
+                                            number = random.nextInt(58);
+                                        takeCardNotFromDeck(number);
+                                        number = random.nextInt(58);
+                                        while (number == 0 || !(getCardByID(number).type.contains("equip_") && getCardByID(number).rareness < 3))
+                                            number = random.nextInt(58);
+                                        takeCardNotFromDeck(number);
+                                        number = random.nextInt(58);
+                                        while (number == 0 || !(getCardByID(number).type.contains("equip_") && getCardByID(number).rareness < 3))
+                                            number = random.nextInt(58);
+                                        takeCardNotFromDeck(number);
+                                    } else {
+                                        useTurnLabel("Выберите еще одного человека");
+                                        return;
+                                    }
+                                }
+                                else {
+                                    useTurnLabel("Этот человек уже отстрелялся");
+                                    return;
+                                }
+                            }
+                        }
+                        playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                                "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
+                                + tempPerson.getStatuses());
                     }
+                    performingPersonAction = false;
                     changeEquipActive = false;
                     repairActive = false;
                     card.person = tempPerson;
@@ -763,6 +938,15 @@ public class GameScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y){
                 if (isDefenceActive) defend(card, tempImage);
+                else if(performingBuildingAction){
+                    if (currentAction.card_id == 20){
+                        card.building.setMinedUp(true);
+                        playerConn.sendString("updateMinedUp," + game.getCurrentGameID() +
+                                "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":1");
+                        performingBuildingAction = false;
+                        endTurn();
+                    }
+                }
                 else fillBuildingStage(card);
             }
         });
@@ -870,7 +1054,8 @@ public class GameScreen implements Screen {
         lastSecondPlayerPlayedCardID++;
         tempImage.addListener(new ClickListener(){
             public void clicked(InputEvent event, float x, float y){
-                if (isAttackActive && !tempCard.person.isInMedBay()) attack(tempCard, tempImage);
+                if (tempCard.person == null) {if (isAttackActive) attack(tempCard, tempImage);}
+                else if (isAttackActive && !tempCard.person.isInMedBay()) attack(tempCard, tempImage);
                 else if (tempCard.person.isInMedBay()) useTurnLabel("Цель в медблоке!");
                 else startCardStage(tempCard, 600);
             }
@@ -956,22 +1141,24 @@ public class GameScreen implements Screen {
             }
         }
 
-        if (secondPlayerField.getChildren().contains(tempImage, true)){
-            tempCard.person.setDoingAnAmbush(false);
-            playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
-                    "," + game.getCurrentUserName() + ",firstPlayer:" + tempImage.getName() + ":"
-                    + tempCard.person.getStatuses());
-        }
-        if (firstPlayerField.getChildren().contains(tempImage, true)){
-            playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
-                    "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
-                    + tempCard.person.getStatuses());
-        }
-        if (firstPlayerField.getChildren().contains(attackerImage, true)){
-            currentAttacker.person.setHitInHead(false);
-            playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
-                    "," + game.getCurrentUserName() + ",secondPlayer:" + attackerImage.getName() + ":"
-                    + currentAttacker.person.getStatuses());
+        if (tempCard.person != null){
+            if (secondPlayerField.getChildren().contains(tempImage, true)){
+                tempCard.person.setDoingAnAmbush(false);
+                playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                        "," + game.getCurrentUserName() + ",firstPlayer:" + tempImage.getName() + ":"
+                        + tempCard.person.getStatuses());
+            }
+            if (firstPlayerField.getChildren().contains(tempImage, true)){
+                playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                        "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
+                        + tempCard.person.getStatuses());
+            }
+            if (firstPlayerField.getChildren().contains(attackerImage, true)){
+                currentAttacker.person.setHitInHead(false);
+                playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                        "," + game.getCurrentUserName() + ",secondPlayer:" + attackerImage.getName() + ":"
+                        + currentAttacker.person.getStatuses());
+            }
         }
 
         checkFiredUp(random, currentAttacker);
@@ -1238,6 +1425,7 @@ public class GameScreen implements Screen {
         checkObjective();
         isAttackActive = false; isDefenceActive = false; currentDefender = null; currentAttacker = null;
         repairActive = false; changeEquipActive = false; currentEquip = null; currentPeopleCountInMedBay = 0;
+        baseRaidCardCounter = 0; currentAction = null; performingPersonAction = false; performingBuildingAction = false;
     }
 
     public void fillPersonCardStage(Card card, Image tempImage){
@@ -1250,12 +1438,13 @@ public class GameScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 isCardStageActive = false;
                 Gdx.input.setInputProcessor(stage);
-                if (myTurn && !secondPlayerActiveCards.isEmpty() && card.person.getFoughtStatus().equals("0")){
+                if (myTurn && card.person.getFoughtStatus().equals("0") && !card.person.isInMedBay()
+                        && !secondPlayerActiveCards.isEmpty()){
                     isAttackActive = true;
                     isDefenceActive = false;
                     attackerImage = tempImage;
                     currentAttacker = card;
-                }
+                } else useTurnLabel("Данный боец не может атаковать");
             }
         });
         cardStage.addActor(attackButton);
@@ -1267,12 +1456,12 @@ public class GameScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 isCardStageActive = false;
                 Gdx.input.setInputProcessor(stage);
-                if (myTurn && firstPlayerActiveCards.values().stream().anyMatch(x -> x.type.equals("building")
+                if (myTurn && !card.person.isInMedBay() && firstPlayerActiveCards.values().stream().anyMatch(x -> x.type.equals("building")
                         || x.type.equals("objective")) && card.person.getFoughtStatus().equals("0")){
                     isDefenceActive = true;
                     isAttackActive = false;
                     currentDefender = card;
-                }
+                } else useTurnLabel("Данный боец не может оборонять");
             }
         });
         cardStage.addActor(defendButton);
@@ -1283,118 +1472,143 @@ public class GameScreen implements Screen {
         medBayButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (medBaySize > currentPeopleCountInMedBay && !card.person.isInMedBay()){
-                    currentPeopleCountInMedBay++;
-                    card.person.setInMedBay(true);
-                    playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
-                            "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
-                            + card.person.getStatuses());
-                } else useTurnLabel("Медблок полон");
+                if (myTurn){
+                    if (medBaySize > currentPeopleCountInMedBay && !card.person.isInMedBay()){
+                        currentPeopleCountInMedBay++;
+                        card.person.setInMedBay(true);
+                        playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
+                                "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
+                                + card.person.getStatuses());
+                        endTurn();
+                    } else useTurnLabel("Медблок полон");
+                } else useTurnLabel("Не ваш ход");
                 isCardStageActive = false;
                 Gdx.input.setInputProcessor(stage);
             }
         });
         cardStage.addActor(medBayButton);
 
-        VerticalGroup gameGroup;
-        Table gameContainerTable;
-        ScrollPane gameScrollPane;
-        gameGroup = new VerticalGroup();
-        gameGroup.pad(30f);
+        Table gameGroup = new Table();
+        gameGroup.pad(10).defaults().expandX().space(4);
+        Table gameContainerTable = new Table();
+        ScrollPane gameScrollPane = new ScrollPane(gameGroup, neonSkin);
+        gameScrollPane.setOverscroll(false, true);
+        gameScrollPane.setScrollingDisabled(true, false);
 
+        gameGroup.row();
         // надписи о вооружении бойца
         Label weaponLabel = new Label("Оружие: " + card.person.getWeaponString().split(";")[2] +
                 " Урон: " + card.person.getWeaponString().split(";")[1], game.getMainLabelStyle());
         weaponLabel.setColor(Color.GOLDENROD);
-        gameGroup.addActor(weaponLabel);
+        weaponLabel.setAlignment(Align.center);
+        weaponLabel.setWrap(true);
+        gameGroup.add(weaponLabel).expandX().prefWidth(1015 * game.xScaler);
 
         if (card.person.getWeaponString().split(";").length > 3){
+            gameGroup.row();
             Label weaponEffectLabel = new Label("Эффекты: ", game.getMainLabelStyle());
             StringBuilder effects = new StringBuilder();
             for (String effect:card.person.getWeaponString().split(";")[3].split(":"))
                 effects.append(EffectHandler.effectMap.get(Integer.parseInt(effect))).append(", ");
-            effects.delete(effects.length() - 2, effects.length() - 1);
-            weaponEffectLabel.setText("Эффекты: " + effects);
-            gameGroup.addActor(weaponEffectLabel);
+            setEffectLabel(gameGroup, weaponEffectLabel, effects);
         }
 
+        gameGroup.row();
         // надписи о броне бойца
         Label armorLabel = new Label("Броня: " + card.person.getArmorString().split(";")[2] +
                 " Защита: " + card.person.getArmorString().split(";")[1], game.getMainLabelStyle());
         armorLabel.setColor(Color.GOLDENROD);
-        gameGroup.addActor(armorLabel);
+        armorLabel.setAlignment(Align.center);
+        armorLabel.setWrap(true);
+        gameGroup.add(armorLabel).expandX().prefWidth(1015 * game.xScaler);
 
         if (card.person.getArmorString().split(";").length > 3){
+            gameGroup.row();
             Label armorEffectLabel = new Label("Эффекты: ", game.getMainLabelStyle());
             StringBuilder effects = new StringBuilder();
             for (String effect:card.person.getArmorString().split(";")[3].split(":"))
                 effects.append(EffectHandler.effectMap.get(Integer.parseInt(effect))).append(", ");
-            effects.delete(effects.length() - 2, effects.length() - 1);
-            armorEffectLabel.setText("Эффекты: " + effects);
-            gameGroup.addActor(armorEffectLabel);
+            setEffectLabel(gameGroup, armorEffectLabel, effects);
         }
 
+        gameGroup.row();
         // надписи о шлеме бойца
         Label helmetLabel = new Label("Шлем: " + card.person.getHelmetString().split(";")[2] +
                 " Защита: " + card.person.getHelmetString().split(";")[1], game.getMainLabelStyle());
         helmetLabel.setColor(Color.GOLDENROD);
-        gameGroup.addActor(helmetLabel);
+        helmetLabel.setAlignment(Align.center);
+        helmetLabel.setWrap(true);
+        gameGroup.add(helmetLabel).expandX().prefWidth(1015 * game.xScaler);
 
         if (card.person.getHelmetString().split(";").length > 3){
+            gameGroup.row();
             Label helmetEffectLabel = new Label("Эффекты: ", game.getMainLabelStyle());
             StringBuilder effects = new StringBuilder();
             for (String effect:card.person.getHelmetString().split(";")[3].split(":"))
                 effects.append(EffectHandler.effectMap.get(Integer.parseInt(effect))).append(", ");
-            effects.delete(effects.length() - 2, effects.length() - 1);
-            helmetEffectLabel.setText("Эффекты: " + effects);
-            gameGroup.addActor(helmetEffectLabel);
+            setEffectLabel(gameGroup, helmetEffectLabel, effects);
         }
 
+        gameGroup.row();
         // надписи о доп снаряжении бойца
         Label firstAddEquipLabel = new Label("Снаряжение: " +
                 card.person.firstEquipString().split(";")[1], game.getMainLabelStyle());
         firstAddEquipLabel.setColor(Color.GOLDENROD);
-        gameGroup.addActor(firstAddEquipLabel);
+        firstAddEquipLabel.setAlignment(Align.center);
+        firstAddEquipLabel.setWrap(true);
+        gameGroup.add(firstAddEquipLabel).expandX().prefWidth(1015 * game.xScaler);
 
         if (Integer.parseInt(card.person.firstEquipString().split(";")[0]) != 0){
+            gameGroup.row();
             Label equipEffectLabel = new Label("Описание: " +
                     getCardByID(Integer.parseInt(card.person.firstEquipString().split(";")[0])).description,
                     game.getMainLabelStyle());
-            gameGroup.addActor(equipEffectLabel);
+            equipEffectLabel.setAlignment(Align.center);
+            equipEffectLabel.setWrap(true);
+            gameGroup.add(equipEffectLabel).expandX().prefWidth(1015 * game.xScaler);
         }
 
+        gameGroup.row();
         Label secondAddEquipLabel = new Label("Снаряжение: " +
                 card.person.secondEquipString().split(";")[1], game.getMainLabelStyle());
         secondAddEquipLabel.setColor(Color.GOLDENROD);
-        gameGroup.addActor(secondAddEquipLabel);
+        secondAddEquipLabel.setAlignment(Align.center);
+        secondAddEquipLabel.setWrap(true);
+        gameGroup.add(secondAddEquipLabel).expandX().prefWidth(1015 * game.xScaler);
 
         if (Integer.parseInt(card.person.secondEquipString().split(";")[0]) != 0){
+            gameGroup.row();
             Label equipEffectLabel = new Label("Описание: " +
                     getCardByID(Integer.parseInt(card.person.secondEquipString().split(";")[0])).description,
                     game.getMainLabelStyle());
+            equipEffectLabel.setAlignment(Align.center);
             equipEffectLabel.setWrap(true);
-            gameGroup.addActor(equipEffectLabel);
+            gameGroup.add(equipEffectLabel).expandX().prefWidth(1015 * game.xScaler);
         }
 
-        for(Actor actor:gameGroup.getChildren()) {
-            ((Label) actor).setAlignment(Align.center);
-            actor.setWidth(1000 * game.xScaler);
-        }
-        gameScrollPane = new ScrollPane(gameGroup, neonSkin);
-        gameScrollPane.setOverscroll(false, true);
-        gameScrollPane.setScrollingDisabled(true, false);
-        gameContainerTable = new Table();
-        gameContainerTable.add(gameScrollPane);
-        gameContainerTable.setPosition(475 * game.xScaler, 375 * game.yScaler);
-        gameContainerTable.setSize(1000 * game.xScaler, 600 * game.yScaler);
+        gameContainerTable.add(gameScrollPane).expand().fill();
+        gameContainerTable.setPosition(475 * game.xScaler, 300 * game.yScaler);
+        gameContainerTable.setSize(1015 * game.xScaler, 600 * game.yScaler);
         cardStage.addActor(gameContainerTable);
-
         for (Actor actor:cardStage.getActors()) {
             actor.scaleBy(game.xScaler - 1,  game.yScaler - 1);
             actor.setPosition(actor.getX() * game.xScaler, actor.getY() * game.yScaler);
         }
     }
 
+    private void setEffectLabel(Table gameGroup, Label effectLabel, StringBuilder effects) {
+        effects.delete(effects.length() - 2, effects.length() - 1);
+        effectLabel.setText("Эффекты: " + effects);
+        effectLabel.setAlignment(Align.center);
+        effectLabel.setWrap(true);
+        gameGroup.add(effectLabel).expandX().prefWidth(1015 * game.xScaler);
+    }
+    public void takeCardNotFromDeck(int id){
+        if (firstPlayerHand.getChildren().items.length < 9){
+            takeCard(id);
+            playerConn.sendString("takeCardNotFromDeck," + game.getCurrentGameID() + "," + game.getCurrentUserName());
+        } else useTurnLabel("Кончилось место в руке");
+    }
     public void setNewObjective(Objective objective){
         playerObjective = objective;
         objectiveCard = getCardByID(objective.getId());
@@ -1597,9 +1811,26 @@ public class GameScreen implements Screen {
                         "," + game.getCurrentUserName() + ",secondPlayer:" + cardID + ":" + tempPerson.getStatuses());
             } catch (Exception ignored){}
             try {card.building.setAlreadyUsed(false);
+                if (card.card_id == 47){
+                    Random random  = new Random();
+                    int number = random.nextInt(58);
+                    while (number == 0 || !getCardByID(number).type.contains("equip_"))
+                        number = random.nextInt(58);
+                    takeCardNotFromDeck(number);
+                }
+                if (card.card_id == 53){
+                    Random random  = new Random();
+                    int number = random.nextInt(58);
+                    while (number == 0 || !getCardByID(number).type.equals("objective"))
+                        number = random.nextInt(58);
+                    takeCardNotFromDeck(number);
+                }
             } catch (Exception ignored){}
         }
-        for (int i:killList) killEnemy((Image) firstPlayerField.getChildren().get(i));
+        for (int i:killList) {
+            try {killEnemy((Image) firstPlayerField.getChildren().get(i));
+            } catch (Exception ignored){}
+        }
     }
 
     public void updateStatuses(String info){
@@ -1667,25 +1898,90 @@ public class GameScreen implements Screen {
         enemyObjective.setDuration(duration);
     }
     public void changeEnemyPersonStatus(int id, String info){
-        String[] splittedInfo = info.split(" . ");
-        Card tempCard = secondPlayerActiveCards.get(id);
-        tempCard.person = createEnemyPerson(splittedInfo);
-        secondPlayerActiveCards.replace(id, tempCard);
+        changePersonStatus(id, info, secondPlayerActiveCards);
     }
     public void changeAllyPersonStatus(int id, String info){
-        String[] splittedInfo = info.split(" . ");
-        Card tempCard = firstPlayerActiveCards.get(id);
-        tempCard.person = createEnemyPerson(splittedInfo);
-        firstPlayerActiveCards.replace(id, tempCard);
+        changePersonStatus(id, info, firstPlayerActiveCards);
     }
+    private void changePersonStatus(int id, String info, HashMap<Integer, Card> playerCards) {
+        String[] splittedInfo = info.split(" . ");
+        Card tempCard = playerCards.get(id);
+        Person tempPerson = createEnemyPerson(splittedInfo);
+        tempCard.person.setHealth(tempPerson.isNotWounded());
+        tempCard.person.setWeapon(tempPerson.getWeapon());
+        tempCard.person.setHelmet(tempPerson.getHelmet());
+        tempCard.person.setArmor(tempPerson.getArmor());
+        tempCard.person.setFirstAddEquip(tempPerson.getSecondAddEquip());
+        tempCard.person.setSecondAddEquip(tempPerson.getFirstAddEquip());
+        playerCards.replace(id, tempCard);
+    }
+
     public void victory(){
-        playerConn.sendString("endGame," + game.getCurrentGameID());
+        playerConn.sendString("endGame," + game.getCurrentGameID() + "," + game.getCurrentUserName()
+                + ",victory," + victoryPoints + "," + firstPlayerField.getChildren().size);
     }
     public void lose(){
-        playerConn.sendString("endGame," + game.getCurrentGameID());
+        playerConn.sendString("endGame," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                ",lose," + victoryPoints + "," + firstPlayerField.getChildren().size);
     }
-    public void draw(){
-        playerConn.sendString("endGame," + game.getCurrentGameID());
+
+    public void sendEndStatus(){
+        playerConn.sendString("endStatus," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                "," + completedObjectives + "," + victoryPoints + "," + firstPlayerField.getChildren().size);
+    }
+    public void startEndScreen(String screenStatus){
+        isCardStageActive = false;
+        isStatusStageActive = false;
+        Image endScreen = new Image(new Texture(Gdx.files.internal("Images/endGame_bg.jpg")));
+        endScreen.setPosition(0,0);
+        stage.addActor(endScreen);
+        Image dogtags = new Image(new Texture(Gdx.files.internal("Images/dogtag.png")));
+        dogtags.setPosition(900, 540);
+        stage.addActor(dogtags);
+        Image exp = new Image(new Texture(Gdx.files.internal("Images/experience.png")));
+        exp.setPosition(1300, 540);
+        stage.addActor(exp);
+        Image rating = new Image(new Texture(Gdx.files.internal("Images/rating.png")));
+        rating.setPosition(400, 540);
+        stage.addActor(rating);
+        TextButton exitButton = new TextButton("Вернуться в меню", game.getTextButtonStyle());
+        exitButton.setPosition(775, 150);
+        exitButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+                game.setScreen(new MainMenuScreen(game));
+            }
+        });
+        stage.addActor(exitButton);
+
+        Label newExp = new Label("", game.getMainLabelStyle());
+        newExp.setPosition(1340, 600);
+        stage.addActor(newExp);
+        Label newDogtags = new Label("", game.getMainLabelStyle());
+        newDogtags.setPosition(925, 575);
+        stage.addActor(newDogtags);
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement("SELECT rating FROM users WHERE nickname=?");
+            preparedStatement.setString(1, game.getCurrentUserName());
+            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            Label newRating = new Label(resultSet.getString("rating"), game.getMainLabelStyle());
+            newRating.setPosition(430, 575);
+            stage.addActor(newRating);
+        } catch (SQLException e) {e.printStackTrace();}
+        switch (screenStatus){
+            case "draw" -> {
+                newExp.setText("+2");
+                newDogtags.setText("+10");
+            }
+            case "victory" -> {
+                newExp.setText("+3");
+                newDogtags.setText("+15");
+            }
+            case "lose" -> {
+                newExp.setText("+1");
+                newDogtags.setText("+5");
+            }
+        }
     }
 }
-
