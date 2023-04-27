@@ -2,6 +2,7 @@ package mgschst.com.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -342,6 +343,7 @@ public class GameScreen implements Screen {
         if (!myTurn) {
             useTurnLabel("Ход игрока: " + game.getCurrentUserName());
             myTurn = true;
+            playSound("turnStart");
         }
     }
 
@@ -401,6 +403,7 @@ public class GameScreen implements Screen {
             }
         });
         firstPlayerHand.addActor(tempImage);
+        playSound("takeCard");
     }
     public boolean canCardBePlaced(Card tempCard, Image tempImage){
         if (canCardBePlacedFromHand(tempCard)){
@@ -493,6 +496,7 @@ public class GameScreen implements Screen {
                     if (++soldCards == 2){
                         soldCards = 0;
                         addMoneyResource();
+                        playSound("sellCard");
                     } else useTurnLabel("Продайте еще одну карту, чтобы получить поддержку");
                     playerConn.sendString("cardFromHand," + game.getCurrentGameID() + "," + game.getCurrentUserName());
                     firstPlayerHand.removeActor(tempImage);
@@ -582,6 +586,7 @@ public class GameScreen implements Screen {
                 for(String effect:tempCard.effects.split(","))
                     EffectHandler.handEffect(Integer.parseInt(effect), tempCard, game);
         }
+        playSound("placeCard");
         endTurn();
     }
 
@@ -693,6 +698,11 @@ public class GameScreen implements Screen {
         Image tempImage = addToPlayedCards(card);
         playerConn.sendString("playCard," + game.getCurrentGameID() + "," + game.getCurrentUserName() + "," +
                 "person," + card.getPersonCard());
+        switch (card.card_id){
+            case 4, 15, 16 -> playSound("income/banditIncome" + new Random().nextInt(3));
+            case 17 -> playSound("income/mercIncome" + new Random().nextInt(2));
+            case 34, 35, 36, 37 -> playSound("income/armyIncome" + new Random().nextInt(2));
+        }
         tempImage.addListener(new ClickListener(){
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor){
@@ -768,8 +778,9 @@ public class GameScreen implements Screen {
                 else {
                     Person tempPerson = card.person;
                     if (repairActive){
-                        tempPerson.getHelmet().setDefence(tempPerson.getHelmet().getMaxDefence());
-                        tempPerson.getArmor().setDefence(tempPerson.getArmor().getMaxDefence());
+                        playSound("repair");
+                        tempPerson.getHelmet().setDefence(getCardByID(tempPerson.getHelmet().getId()).defence);
+                        tempPerson.getArmor().setDefence(getCardByID(tempPerson.getArmor().getId()).defence);
                         ArrayList<Integer> tempList = new ArrayList<>();
                         for (int i:tempPerson.getArmor().getEffect()) if (i != 12) tempList.add(i);
                         tempPerson.getArmor().setEffect(tempList.stream().mapToInt(i -> i).toArray());
@@ -802,6 +813,13 @@ public class GameScreen implements Screen {
                                             currentEquip.name, new int[]{});
                                 }
                                 tempPerson.setWeapon(tempWeapon);
+                                switch (tempWeapon.getId()){
+                                    case 1 -> playSound("equip/equipPistol");
+                                    case 7 -> playSound("equip/equipShotgun");
+                                    case 8 -> playSound("equip/equipAuto");
+                                    case 30,31 -> playSound("equip/equipSniper");
+                                    case 52 -> playSound("equip/equipAxe");
+                                }
                             }
                             case "equip_helmet" -> {
                                 if (currentEquip.card_id == 29 && (tempPerson.getWeapon().getId() == 30 ||
@@ -810,20 +828,35 @@ public class GameScreen implements Screen {
                                     return;
                                 }
                                 tempPerson.setHelmet(setNewProtectionEquip());
+                                playSound("equip/equipAnything");
                             }
-                            case "equip_armor" -> tempPerson.setArmor(setNewProtectionEquip());
+                            case "equip_armor" -> {
+                                tempPerson.setArmor(setNewProtectionEquip());
+                                playSound("equip/equipArmor");
+                            }
                             case "equip_heal" -> {
                                 switch (currentEquip.card_id){
-                                    case 21 -> tempPerson.setBleeding(false);
+                                    case 21 -> {
+                                        tempPerson.setBleeding(false);
+                                        playSound("heal/bandage");
+                                    }
                                     case 22 -> {
                                         if (tempPerson.isNotFractured()) tempPerson.setHealth(true);
+                                        playSound("heal/firstAidKit");
                                     }
                                     case 23 -> {
                                         if (tempPerson.isNotFractured()) tempPerson.setHealth(true);
                                         tempPerson.setBleeding(false);
+                                        playSound("heal/firstAidKit");
                                     }
-                                    case 24 -> tempPerson.setFractured(false);
-                                    case 25 -> tempPerson.setOnPainkillers(true);
+                                    case 24 -> {
+                                        tempPerson.setFractured(false);
+                                        playSound("heal/splint");
+                                    }
+                                    case 25 -> {
+                                        tempPerson.setOnPainkillers(true);
+                                        playSound("heal/injector");
+                                    }
                                 }
                                 playerConn.sendString("updateStatuses," + game.getCurrentGameID() +
                                         "," + game.getCurrentUserName() + ",secondPlayer:" + tempImage.getName() + ":"
@@ -835,6 +868,7 @@ public class GameScreen implements Screen {
                                 else if (tempPerson.getSecondAddEquip().getId() == 0)
                                     tempPerson.setSecondAddEquip(new AdditionalEquipment(currentEquip.card_id, currentEquip.name));
                                 else tempPerson.setFirstAddEquip(new AdditionalEquipment(currentEquip.card_id, currentEquip.name));
+                                playSound("equip/equipAnything");
                             }
                         }
                     } else {
@@ -872,7 +906,10 @@ public class GameScreen implements Screen {
                                     baseRaidCardCounter++;
                                     if (baseRaidCardCounter == 2){
                                         baseRaidCardCounter = 0;
-                                        if (new Random().nextInt(101) >= 90) killEnemy(tempImage);
+                                        if (new Random().nextInt(101) >= 90) {
+                                            killEnemy(tempImage);
+                                            playSound("pain/pain" + new Random().nextInt(5));
+                                        }
                                         // дать четыре хорошие карты
                                         Random random  = new Random();
                                         int number = random.nextInt(58);
@@ -1186,6 +1223,7 @@ public class GameScreen implements Screen {
             } else if (tempCard.building.isMinedUp()){
                 killEnemy(attackerImage);
                 tempCard.building.setMinedUp(false);
+                playSoundToEnemyAndUser("shot/explosion");
                 playerConn.sendString("updateMinedUp," + game.getCurrentGameID() +
                         "," + game.getCurrentUserName() + ",firstPlayer:" + tempImage.getName() + ":0");
             } else changeBuildingHealthStatus(tempCard, tempImage);
@@ -1197,8 +1235,10 @@ public class GameScreen implements Screen {
 
     public void updateMinedUp(String info){
         String[] splittedInfo = info.split(":");
-        if (splittedInfo[0].equals("firstPlayer"))firstPlayerActiveCards.get(Integer.parseInt(splittedInfo[1]))
-                .building.setMinedUp(Integer.parseInt(splittedInfo[2]) == 1);
+        if (splittedInfo[0].equals("firstPlayer")){
+            firstPlayerActiveCards.get(Integer.parseInt(splittedInfo[1]))
+                    .building.setMinedUp(Integer.parseInt(splittedInfo[2]) == 1);
+        }
         else secondPlayerActiveCards.get(Integer.parseInt(splittedInfo[1]))
                 .building.setMinedUp(Integer.parseInt(splittedInfo[2]) == 1);
     }
@@ -1210,12 +1250,14 @@ public class GameScreen implements Screen {
         if (!tempCard.person.isDefender() && !(currentAttacker.person.getWeapon().getId() == 51)
                 && !(currentAttacker.person.getWeapon().getId() == 52) && !tempCard.person.isDoingAnAmbush()){
             // атаковать
-            boolean noCounterAttack = addEquipCheck(tempCard, tempImage, random);
+            boolean counterAttack = addEquipCheck(tempCard, tempImage, random);
             attackEnemy(tempCard, tempImage, random, currentAttacker.person.getWeapon());
             if ((secondPlayerField.getChildren().contains(tempImage, true) ||
-                    firstPlayerField.getChildren().contains(tempImage, true)) && noCounterAttack){
+                    firstPlayerField.getChildren().contains(tempImage, true)) && counterAttack){
                 // обратная атака
                 attackEnemy(currentAttacker, attackerImage, random, tempCard.person.getWeapon());
+                if (!firstPlayerField.getChildren().contains(attackerImage, true))
+                    playSound("pain/pain" + new Random().nextInt(5));
             }
         } else {
             if (tempCard.person.isDoingAnAmbush()) useTurnLabel("Засада!");
@@ -1225,17 +1267,17 @@ public class GameScreen implements Screen {
                     firstPlayerField.getChildren().contains(attackerImage, true)){
                 // атаковать
                 attackEnemy(tempCard, tempImage, random, currentAttacker.person.getWeapon());
-            }
+            } else playSound("pain/pain" + new Random().nextInt(5));
         }
     }
 
     public boolean addEquipCheck(Card tempCard, Image tempImage, Random random){
-        boolean noCounterAttack = true;
+        boolean counterAttack = true;
         if (currentAttacker.person.getFirstAddEquip().getId() == 39 ||
                 (currentAttacker.person.getFirstAddEquip().getId() == 38 && random.nextBoolean())
                 || currentAttacker.person.getFirstAddEquip().getId() == 41
                 || currentAttacker.person.getFirstAddEquip().getId() == 42){
-            noCounterAttack = false;
+            counterAttack = false;
             if (currentAttacker.person.getFirstAddEquip().getId() == 41
                     || currentAttacker.person.getFirstAddEquip().getId() == 42){
                 if (currentAttacker.person.getFirstAddEquip().getId() == 41){
@@ -1249,10 +1291,11 @@ public class GameScreen implements Screen {
                     (currentAttacker.person.getSecondAddEquip().getId() == 38 && random.nextBoolean())
                     || currentAttacker.person.getSecondAddEquip().getId() == 41
                     || currentAttacker.person.getSecondAddEquip().getId() == 42){
-                noCounterAttack = false;
+                counterAttack = false;
                 if (currentAttacker.person.getSecondAddEquip().getId() == 41
                         || currentAttacker.person.getSecondAddEquip().getId() == 42){
                     if (currentAttacker.person.getSecondAddEquip().getId() == 41){
+                        playSoundToEnemyAndUser("shot/explosion");
                         if (tempCard.person.isNotWounded() && random.nextBoolean()) tempCard.person.setHealth(false);
                         else killEnemy(tempImage);
                     }
@@ -1260,7 +1303,7 @@ public class GameScreen implements Screen {
                 }
             }
         }
-        return noCounterAttack;
+        return counterAttack;
     }
     public void attackEnemy(Card tempCard, Image tempImage, Random random, Weapon attackerWeapon){
         boolean broken = false;
@@ -1272,6 +1315,13 @@ public class GameScreen implements Screen {
                 if (random.nextInt(101) >= 75) broken = true;}
         } catch (Exception ignored){}
         if (broken){
+            switch (attackerWeapon.getId()){
+                case 1 -> playSoundToEnemyAndUser("shot/pistolShot");
+                case 7 -> playSoundToEnemyAndUser("shot/shotgunShot");
+                case 8 -> playSoundToEnemyAndUser("shot/autoShot");
+                case 30,31 -> playSoundToEnemyAndUser("shot/sniperShot");
+                case 52 -> playSoundToEnemyAndUser("shot/axeHit");
+            }
             if (checkOnAttackerShield(tempCard)) return;
             if (random.nextInt(101) >= 75) attackHead(tempCard, attackerWeapon, tempImage);
             else attackArmor(tempCard, attackerWeapon, tempImage);
@@ -1281,6 +1331,14 @@ public class GameScreen implements Screen {
             boolean hitToHead = effectList.contains(7) && random.nextInt(101) >= 25;
             if (currentAttacker.person.getWeapon().equals(attackerWeapon) && currentAttacker.person.isHitInHead()) hitToHead = true;
             boolean instantKill = effectList.contains(11);
+
+            switch (attackerWeapon.getId()){
+                case 1 -> playSoundToEnemyAndUser("shot/pistolShot");
+                case 7 -> playSoundToEnemyAndUser("shot/shotgunShot");
+                case 8 -> playSoundToEnemyAndUser("shot/autoShot");
+                case 30,31 -> playSoundToEnemyAndUser("shot/sniperShot");
+                case 52 -> playSoundToEnemyAndUser("shot/axeHit");
+            }
 
             for (int i = 0; i<attackCounter;i++) {
                 if (firstPlayerActiveCards.containsValue(tempCard) || secondPlayerActiveCards.containsValue(tempCard)) {
@@ -1332,13 +1390,21 @@ public class GameScreen implements Screen {
                 defenderEquip.setDefence(0);
                 if (tempCard.person.isOnPainkillers() && new Random().nextInt(101) >= 25) return new ProtectionEquip(999, 0, "0", new int[]{});
                 if (tempCard.person.isNotWounded()) checkOnInjuries (tempCard);
-                else {killEnemy(tempImage);return new ProtectionEquip(999, 0, "0", new int[]{});}
+                else {
+                    switch (currentAttacker.card_id){
+                        case 4, 15, 16 -> playSound("frag/banditFrag" + new Random().nextInt(3));
+                        case 17 -> playSound("frag/mercFrag" + new Random().nextInt(2));
+                        case 34, 35, 36, 37 -> playSound("frag/armyFrag" + new Random().nextInt(2));
+                    }
+                    killEnemy(tempImage);
+                    return new ProtectionEquip(999, 0, "0", new int[]{});}
             }
         } else {
             if (defenderEquip.getDefence() >= attackerWeapon.getAttack())
                 defenderEquip.setDefence(defenderEquip.getDefence() - attackerWeapon.getAttack());
             else {
                 defenderEquip.setDefence(0);
+                if (tempCard.person.isOnPainkillers() && new Random().nextInt(101) >= 25) return new ProtectionEquip(999, 0, "0", new int[]{});
                 if (tempCard.person.isNotWounded()) checkOnInjuries (tempCard);
                 else {killEnemy(tempImage);return new ProtectionEquip(999, 0, "0", new int[]{});}
             }
@@ -1378,15 +1444,18 @@ public class GameScreen implements Screen {
     }
 
     public void killEnemy(Image tempImage){
-        if (secondPlayerField.getChildren().contains(tempImage,true)){
-            killSomeone(tempImage, secondPlayerActiveCards, secondPlayerField);
-            playerConn.sendString("removeKilledAlly," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
-                    "," + tempImage.getName());
-        } else if (firstPlayerField.getChildren().contains(tempImage,true)){
-            killSomeone(tempImage, firstPlayerActiveCards, firstPlayerField);
-            playerConn.sendString("removeKilledEnemy," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
-                    "," + tempImage.getName());
-        }
+        try {
+            if (secondPlayerField.getChildren().contains(tempImage,true)){
+                killSomeone(tempImage, secondPlayerActiveCards, secondPlayerField);
+                playerConn.sendString("removeKilledAlly," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                        "," + tempImage.getName());
+            } else if (firstPlayerField.getChildren().contains(tempImage,true)){
+                if (getCardByID(Integer.parseInt(tempImage.getName())).type.equals("people")) playSound("pain/pain" + new Random().nextInt(5));
+                killSomeone(tempImage, firstPlayerActiveCards, firstPlayerField);
+                playerConn.sendString("removeKilledEnemy," + game.getCurrentGameID() + "," + game.getCurrentUserName() +
+                        "," + tempImage.getName());
+            }
+        } catch (Exception ignored){}
     }
 
     private void killSomeone(Image tempImage, HashMap<Integer, Card> playerActiveCards, HorizontalGroup playerField) {
@@ -1884,6 +1953,7 @@ public class GameScreen implements Screen {
             firstPlayerActiveCards.remove(id);
             firstPlayerField.removeActor(Arrays.stream(firstPlayerField.getChildren().toArray())
                     .filter(x -> x.getName().equals(String.valueOf(id))).findFirst().get());
+            playSound("pain/pain" + new Random().nextInt(5));
         } catch (NoSuchElementException e){System.out.println("No such element error");}
 
     }
@@ -1950,12 +2020,13 @@ public class GameScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y){
                 game.setScreen(new MainMenuScreen(game));
+                playerConn.disconnect();
             }
         });
         stage.addActor(exitButton);
 
         Label newExp = new Label("", game.getMainLabelStyle());
-        newExp.setPosition(1340, 600);
+        newExp.setPosition(1335, 600);
         stage.addActor(newExp);
         Label newDogtags = new Label("", game.getMainLabelStyle());
         newDogtags.setPosition(925, 575);
@@ -1966,7 +2037,7 @@ public class GameScreen implements Screen {
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
             Label newRating = new Label(resultSet.getString("rating"), game.getMainLabelStyle());
-            newRating.setPosition(430, 575);
+            newRating.setPosition(425, 575);
             stage.addActor(newRating);
         } catch (SQLException e) {e.printStackTrace();}
         switch (screenStatus){
@@ -1983,5 +2054,14 @@ public class GameScreen implements Screen {
                 newDogtags.setText("+5");
             }
         }
+    }
+
+    public void playSound(String soundPath){
+        Sound sound = Gdx.audio.newSound(Gdx.files.internal("Sounds/" + soundPath + ".mp3"));
+        sound.play(game.getSoundVolume());
+    }
+    public void playSoundToEnemyAndUser(String soundPath){
+        playerConn.sendString("playSound," + game.getCurrentGameID() + "," + game.getCurrentUserName() + "," + soundPath);
+        playSound(soundPath);
     }
 }

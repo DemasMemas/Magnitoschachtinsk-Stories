@@ -16,21 +16,18 @@ import mgschst.com.connect.TCPConnection;
 import mgschst.com.connect.TCPConnectionHandler;
 import mgschst.com.screens.AuthorizationScreen;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Random;
 
 public class MainMgschst extends Game {
     public SpriteBatch batch;
-    public BitmapFont mainFont;
-    public BitmapFont chosenFont;
-    public BitmapFont smallFont;
-    public BitmapFont normalFont;
+    public BitmapFont mainFont, chosenFont, smallFont, normalFont;
     private TextButton.TextButtonStyle textButtonStyle;
     private TextField.TextFieldStyle textFieldStyle;
-    private Label.LabelStyle chosenLabelStyle;
-    private Label.LabelStyle smallLabelStyle;
-    private Label.LabelStyle normalLabelStyle;
-    private Label.LabelStyle mainLabelStyle;
-    private Label.LabelStyle chosenMainLabelStyle;
+    private Label.LabelStyle chosenLabelStyle, smallLabelStyle, normalLabelStyle, mainLabelStyle, chosenMainLabelStyle;
     private Window.WindowStyle dialogWindowStyle;
     private boolean buttonIsPressed;
     private String currentUserName;
@@ -40,8 +37,9 @@ public class MainMgschst extends Game {
     private TCPConnection playerConnection;
     private int currentGameID;
 
-    public float xScaler = 1;
-    public float yScaler = 1;
+    public float xScaler = 1, yScaler = 1;
+    public float musicVolume = 1f;
+    public float soundVolume = 1f;
 
     @Override
     public void create() {
@@ -76,6 +74,7 @@ public class MainMgschst extends Game {
         parameter.size = 24;
         setFontsAndStyles(generator, parameter);
 
+        appendVolumeSettings();
         playMenuMusic();
 
         AuthorizationScreen auS = new AuthorizationScreen(this);
@@ -230,6 +229,32 @@ public class MainMgschst extends Game {
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal
                 ("Music/menuMusic" + random.nextInt(7) + ".mp3"));
         menuMusic.play();
-        menuMusic.setVolume(0.15f);
+        menuMusic.setVolume(musicVolume);
+    }
+
+    public void updateVolume(float newMusicVolume, float newSoundVolume){
+        menuMusic.setVolume(newMusicVolume);
+        musicVolume = newMusicVolume;
+        soundVolume = newSoundVolume;
+    }
+
+    public void appendVolumeSettings() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(new File(System.getProperty("user.dir")
+                + "\\core\\src\\mgschst\\com\\config\\audioCFG.txt").getPath()))) {
+            String line;
+            float sV = 1f, mV = 1f;
+            while ((line = reader.readLine()) != null) {
+                switch (line.split(":")[0]) {
+                    case "musicVolume" -> mV = Float.parseFloat(line.split(":")[1]);
+                    case "soundVolume" -> sV = Float.parseFloat(line.split(":")[1]);
+                }
+            }
+            musicVolume = mV;
+            soundVolume = sV;
+        } catch (IOException e) {e.printStackTrace();}
+    }
+
+    public float getSoundVolume(){
+        return soundVolume;
     }
 }

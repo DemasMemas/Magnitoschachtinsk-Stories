@@ -36,49 +36,22 @@ public class ProfileScreen implements Screen {
     final OrthographicCamera camera;
     final Batch batch;
     Stage stage;
-    Image background;
-    Image profilePicture;
-    Image experienceBar;
-    Image experienceProgress;
-    Image dogtag;
-    Image rankIcon;
+    Image background, profilePicture, experienceBar, experienceProgress, dogtag, rankIcon, cardBox;
     TextButton exitButton;
-    Image cardBox;
 
-    ScrollPane cardPane;
-    Table cardTable;
-    Table cardContainerTable;
-
-    ScrollPane boardPane;
-    Table boardTable;
-    Table boardContainerTable;
-
-    ScrollPane avaPane;
-    Table avaTable;
-    Table avaContainerTable;
-
-    ScrollPane deckPane;
-    Table deckTable;
-    Table deckContainerTable;
+    ScrollPane deckPane, avaPane, boardPane, cardPane;
+    Table deckTable, deckContainerTable, avaTable, avaContainerTable, boardTable, boardContainerTable, cardTable, cardContainerTable;
 
     Connection conn = new DatabaseHandler().getConnection();
     Skin neonSkin = new Skin(Gdx.files.internal("Skins/neon/skin/neon-ui.json"));
 
     String nickname;
-    Integer level;
-    Integer experience;
-    Integer rating;
-    Integer dogtags;
-    String cardPicturePath;
-    String boardPicturePath;
-    String profilePicturePath;
-    String rankName;
+    Integer level, experience, rating, dogtags;
+    String cardPicturePath, boardPicturePath, profilePicturePath, rankName;
     Integer activeDeckID;
     HashMap<Integer, String> ranks = new HashMap<>();
 
-    final Integer cardStyleAmount = 4;
-    final Integer boardStyleAmount = 3;
-    final Integer avaStyleAmount = 8;
+    final Integer cardStyleAmount = 4, boardStyleAmount = 3, avaStyleAmount = 8;
 
     HashMap<String, UnlockCondition> conditions = new HashMap<>();
 
@@ -843,9 +816,9 @@ public class ProfileScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 // звуковые эффекты открытия ящика
                 Sound crateSound = Gdx.audio.newSound(Gdx.files.internal("Sounds/crateSound.mp3"));
-                crateSound.play(1.0f);
+                crateSound.play(game.getSoundVolume());
                 Sound beerSound = Gdx.audio.newSound(Gdx.files.internal("Sounds/beerSound.mp3"));
-                beerSound.play(1.0f);
+                beerSound.play(game.getSoundVolume());
                 // смена фона на открытый ящик, очистить надпись
                 dialog.getContentTable().removeActor(crateImage[0]);
                 dialog.getTitleLabel().setText("");

@@ -162,8 +162,18 @@ public class MainMenuScreen implements Screen {
         stage.addActor(openProfileButton);
         openProfileButton.setPosition(100, 1080 - 500);
 
+        TextButton settingsButton = new TextButton("Настройки", game.getTextButtonStyle());
+        settingsButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new SettingsScreen(game));
+            }
+        });
+        stage.addActor(settingsButton);
+        settingsButton.setPosition(100, 1080 - 550);
+
         exitGameButton = new TextButton("Выйти", game.getTextButtonStyle());
-        exitGameButton.setPosition(100, 1080 - 600);
+        exitGameButton.setPosition(100, 1080 - 650);
         exitGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
