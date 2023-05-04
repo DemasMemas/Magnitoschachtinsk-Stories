@@ -34,7 +34,7 @@ public class MainMgschst extends Game {
     private Music menuMusic;
     private final Random random = new Random();
     private final OrthographicCamera camera = new OrthographicCamera();
-    private TCPConnection playerConnection;
+    private static TCPConnection playerConnection;
     private int currentGameID;
 
     public float xScaler = 1, yScaler = 1;
@@ -212,15 +212,14 @@ public class MainMgschst extends Game {
         return camera;
     }
 
-    public TCPConnection getPlayerConnection(){ return playerConnection;}
+    public TCPConnection getPlayerConnection(){return playerConnection;}
 
     public int getCurrentGameID() { return currentGameID; }
 
     public void setCurrentGameID(int currentGameID) { this.currentGameID = currentGameID; }
 
     public void recreatePlayerConnection(){ try {
-        if (playerConnection == null)
-            playerConnection = new TCPConnection(new TCPConnectionHandler(this), "127.0.0.1", 8080);
+        playerConnection = new TCPConnection(new TCPConnectionHandler(this), "127.0.0.1", 8080);
     } catch (Exception e) {
         e.printStackTrace();
     }}

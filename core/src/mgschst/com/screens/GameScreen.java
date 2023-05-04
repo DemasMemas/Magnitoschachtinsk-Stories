@@ -378,6 +378,7 @@ public class GameScreen implements Screen {
     }
 
     public void takeCard(int cardID){
+        playSound("takeCard");
         firstCardCounter.setText(Integer.parseInt(String.valueOf(firstCardCounter.getText())) - 1);
         // добавить карту в руку
         Card tempCard = getCardByID(cardID);
@@ -403,7 +404,6 @@ public class GameScreen implements Screen {
             }
         });
         firstPlayerHand.addActor(tempImage);
-        playSound("takeCard");
     }
     public boolean canCardBePlaced(Card tempCard, Image tempImage){
         if (canCardBePlacedFromHand(tempCard)){
@@ -1226,10 +1226,28 @@ public class GameScreen implements Screen {
                 playSoundToEnemyAndUser("shot/explosion");
                 playerConn.sendString("updateMinedUp," + game.getCurrentGameID() +
                         "," + game.getCurrentUserName() + ",firstPlayer:" + tempImage.getName() + ":0");
-            } else changeBuildingHealthStatus(tempCard, tempImage);
-        } catch (Exception ignored){
-            if (tempCard.building.getDefenderList().size() == 0)
+            } else {
+                switch (currentAttacker.person.getWeapon().getId()){
+                    case 1 -> playSoundToEnemyAndUser("shot/pistolShot");
+                    case 7 -> playSoundToEnemyAndUser("shot/shotgunShot");
+                    case 8 -> playSoundToEnemyAndUser("shot/autoShot");
+                    case 30,31 -> playSoundToEnemyAndUser("shot/sniperShot");
+                    case 52 -> playSoundToEnemyAndUser("shot/axeHit");
+                }
                 changeBuildingHealthStatus(tempCard, tempImage);
+            }
+        } catch (Exception ignored){
+            if (tempCard.building.getDefenderList().size() == 0){
+                changeBuildingHealthStatus(tempCard, tempImage);
+                switch (currentAttacker.person.getWeapon().getId()){
+                    case 1 -> playSoundToEnemyAndUser("shot/pistolShot");
+                    case 7 -> playSoundToEnemyAndUser("shot/shotgunShot");
+                    case 8 -> playSoundToEnemyAndUser("shot/autoShot");
+                    case 30,31 -> playSoundToEnemyAndUser("shot/sniperShot");
+                    case 52 -> playSoundToEnemyAndUser("shot/axeHit");
+                }
+            }
+
         }
     }
 
@@ -1673,8 +1691,9 @@ public class GameScreen implements Screen {
         gameGroup.add(effectLabel).expandX().prefWidth(1015 * game.xScaler);
     }
     public void takeCardNotFromDeck(int id){
-        if (firstPlayerHand.getChildren().items.length < 9){
+        if (Arrays.stream(firstPlayerHand.getChildren().items).filter(Objects::nonNull).count() < 9){
             takeCard(id);
+            firstCardCounter.setText(Integer.parseInt(String.valueOf(firstCardCounter.getText())) + 1);
             playerConn.sendString("takeCardNotFromDeck," + game.getCurrentGameID() + "," + game.getCurrentUserName());
         } else useTurnLabel("Кончилось место в руке");
     }
@@ -1950,10 +1969,11 @@ public class GameScreen implements Screen {
     public void removeKilledAlly(int id){
         try{
             if (firstPlayerActiveCards.get(id).card_id == 50 && medBaySize > 1) medBaySize--;
+            if (!(firstPlayerActiveCards.get(id).type.equals("building") || firstPlayerActiveCards.get(id).card_id == 54))
+                playSound("pain/pain" + new Random().nextInt(5));
             firstPlayerActiveCards.remove(id);
             firstPlayerField.removeActor(Arrays.stream(firstPlayerField.getChildren().toArray())
                     .filter(x -> x.getName().equals(String.valueOf(id))).findFirst().get());
-            playSound("pain/pain" + new Random().nextInt(5));
         } catch (NoSuchElementException e){System.out.println("No such element error");}
 
     }
@@ -2021,6 +2041,8 @@ public class GameScreen implements Screen {
             public void clicked(InputEvent event, float x, float y){
                 game.setScreen(new MainMenuScreen(game));
                 playerConn.disconnect();
+                game.recreatePlayerConnection();
+                playerConn = game.getPlayerConnection();
             }
         });
         stage.addActor(exitButton);

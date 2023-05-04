@@ -51,7 +51,7 @@ public class ProfileScreen implements Screen {
     Integer activeDeckID;
     HashMap<Integer, String> ranks = new HashMap<>();
 
-    final Integer cardStyleAmount = 4, boardStyleAmount = 3, avaStyleAmount = 8;
+    final Integer cardStyleAmount = 5, boardStyleAmount = 3, avaStyleAmount = 8;
 
     HashMap<String, UnlockCondition> conditions = new HashMap<>();
 
@@ -632,6 +632,8 @@ public class ProfileScreen implements Screen {
         conditions.put("card_2.png", tempUnlockCondition);
         tempUnlockCondition = new UnlockCondition("rank", 7, "card");
         conditions.put("card_3.png", tempUnlockCondition);
+        tempUnlockCondition = new UnlockCondition("rank", 9, "card");
+        conditions.put("card_4.png", tempUnlockCondition);
     }
 
     public void startDialog(Image tempImage, String word) {

@@ -1,2 +1,2 @@
-musicVolume:0.07
-soundVolume:0.34
+musicVolume:0.0
+soundVolume:0.47

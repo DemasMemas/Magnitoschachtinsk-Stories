@@ -128,7 +128,7 @@ public class EffectHandler {
                 Random random  = new Random();
                 int number = random.nextInt(58);
                 for (int i = 0; i < Integer.parseInt(commandList[2]);i++){
-                    while (number == 0 || !getCardByID(number).type.contains("equip_" + commandList[1]))
+                    while (number == 0 || number == 52 || !getCardByID(number).type.contains("equip_" + commandList[1]))
                         number = random.nextInt(58);
                     takeCardNotFromDeck(number, game);
                 }

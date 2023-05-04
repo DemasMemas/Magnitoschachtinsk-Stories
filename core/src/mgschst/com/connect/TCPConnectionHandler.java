@@ -25,7 +25,6 @@ public class TCPConnectionHandler implements TCPConnectionListener {
     public void onReceiveString(TCPConnection tcpConnection, String value) {
         ArrayList<String> commandList = new ArrayList<>();
         Collections.addAll(commandList, value.split(","));
-        if (conn == null) game.recreatePlayerConnection();
         Gdx.app.postRunnable(() -> {
             switch (commandList.get(0)) {
                 case "writeChatMsg" -> {
