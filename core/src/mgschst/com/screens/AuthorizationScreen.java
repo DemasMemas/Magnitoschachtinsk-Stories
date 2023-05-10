@@ -125,10 +125,30 @@ public class AuthorizationScreen implements Screen {
 
                             } else {
                                 game.setCurrentUserName(loginField.getText().trim());
+                                preparedStatement = conn.prepareStatement("INSERT INTO decks (nickname, name, cards) VALUES (?,?,?)");
+                                preparedStatement.setString(1, loginField.getText().trim());
+                                preparedStatement.setString(2, "База");
+                                preparedStatement.setString(3, "");
+                                preparedStatement.executeUpdate();
 
-                                preparedStatement = conn.prepareStatement("INSERT INTO users (nickname,password) VALUES(?,?)");
+                                preparedStatement = conn.prepareStatement("SELECT * FROM decks WHERE nickname=?");
+                                preparedStatement.setString(1, loginField.getText().trim());
+                                resultSet = preparedStatement.executeQuery();
+                                resultSet.next();
+                                int deckID = resultSet.getInt("deck_id");
+
+                                preparedStatement = conn.prepareStatement("INSERT INTO users (nickname,password,profile_picture_path,level,experience,rating,card_picture_path,board_picture_path,dogtags,cards,active_deck) VALUES(?,?,?,?,?,?,?,?,?,?,?)");
                                 preparedStatement.setString(1, loginField.getText().trim());
                                 preparedStatement.setString(2, passwordField.getText().trim());
+                                preparedStatement.setString(3, "ava_0.png");
+                                preparedStatement.setInt(4, 1);
+                                preparedStatement.setInt(5, 0);
+                                preparedStatement.setInt(6, 50);
+                                preparedStatement.setString(7, "card_0.png");
+                                preparedStatement.setString(8, "board_0.png");
+                                preparedStatement.setInt(9, 100);
+                                preparedStatement.setString(10, "");
+                                preparedStatement.setInt(11, deckID);
                                 preparedStatement.executeUpdate();
 
                                 game.setScreen(new MainMenuScreen(game));
